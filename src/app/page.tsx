@@ -1,65 +1,132 @@
-import Image from "next/image";
+import Link from 'next/link'
+import { createClient } from '@/lib/supabase/server'
+import { Navbar } from '@/components/navbar'
+import { Sparkles, ArrowRight, BookOpen, PenTool, Users, ShieldCheck } from 'lucide-react'
 
-export default function Home() {
+export default async function HomePage() {
+  const supabase = await createClient()
+
+  const {
+    data: { user },
+  } = await supabase.auth.getUser()
+
+  let profile = null
+  if (user) {
+    const { data } = await supabase
+      .from('profiles')
+      .select('username, full_name, avatar_url')
+      .eq('id', user.id)
+      .single()
+    profile = data
+  }
+
   return (
-    <div className="flex flex-col flex-1 items-center justify-center bg-zinc-50 font-sans dark:bg-black">
-      <main className="flex flex-1 w-full max-w-3xl flex-col items-center justify-between py-32 px-16 bg-white dark:bg-black sm:items-start">
-        <Image
-          className="dark:invert"
-          src="/next.svg"
-          alt="Next.js logo"
-          width={100}
-          height={20}
-          priority
-        />
-        <div className="flex flex-col items-center gap-6 text-center sm:items-start sm:text-left">
-          <h1 className="max-w-xs text-3xl font-semibold leading-10 tracking-tight text-black dark:text-zinc-50">
-            To get started, edit the page.tsx file.
-          </h1>
-          <p className="max-w-md text-lg leading-8 text-zinc-600 dark:text-zinc-400">
-            Looking for a starting point or more instructions? Head over to{" "}
-            <a
-              href="https://vercel.com/templates?framework=next.js&utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Templates
-            </a>{" "}
-            or the{" "}
-            <a
-              href="https://nextjs.org/learn?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-              className="font-medium text-zinc-950 dark:text-zinc-50"
-            >
-              Learning
-            </a>{" "}
-            center.
-          </p>
-        </div>
-        <div className="flex flex-col gap-4 text-base font-medium sm:flex-row">
-          <a
-            className="flex h-12 w-full items-center justify-center gap-2 rounded-full bg-foreground px-5 text-background transition-colors hover:bg-[#383838] dark:hover:bg-[#ccc] md:w-[158px]"
-            href="https://vercel.com/new?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            <Image
-              className="dark:invert"
-              src="/vercel.svg"
-              alt="Vercel logomark"
-              width={16}
-              height={16}
-            />
-            Deploy Now
-          </a>
-          <a
-            className="flex h-12 w-full items-center justify-center rounded-full border border-solid border-black/[.08] px-5 transition-colors hover:border-transparent hover:bg-black/[.04] dark:border-white/[.145] dark:hover:bg-[#1a1a1a] md:w-[158px]"
-            href="https://nextjs.org/docs?utm_source=create-next-app&utm_medium=appdir-template-tw&utm_campaign=create-next-app"
-            target="_blank"
-            rel="noopener noreferrer"
-          >
-            Documentation
-          </a>
-        </div>
+    <div className="min-h-screen flex flex-col bg-zinc-950 text-zinc-100 selection:bg-indigo-500 selection:text-white">
+      <Navbar user={user} profile={profile} />
+
+      {/* Hero Section */}
+      <main className="flex-1">
+        <section className="relative overflow-hidden pt-20 pb-24 md:pt-32 md:pb-36 border-b border-zinc-800/60">
+          {/* Background Ambient Glows */}
+          <div className="absolute top-10 left-1/2 -translate-x-1/2 w-[600px] h-[350px] bg-indigo-600/15 rounded-full blur-[120px] pointer-events-none" />
+          <div className="absolute top-40 right-10 w-72 h-72 bg-purple-600/10 rounded-full blur-[100px] pointer-events-none" />
+
+          <div className="max-w-5xl mx-auto px-4 sm:px-6 text-center relative z-10 space-y-8">
+            <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-indigo-950/80 border border-indigo-500/30 text-indigo-300 text-xs font-medium shadow-inner">
+              <Sparkles className="w-3.5 h-3.5 text-indigo-400" />
+              <span>Platform Menulis & Membaca Artikel Generasi Baru</span>
+            </div>
+
+            <h1 className="text-4xl sm:text-6xl md:text-7xl font-extrabold tracking-tight text-white leading-[1.1]">
+              Dunia Untuk Semua <br />
+              <span className="bg-gradient-to-r from-indigo-400 via-purple-300 to-pink-400 bg-clip-text text-transparent">
+                Cerita dan Gagasan.
+              </span>
+            </h1>
+
+            <p className="max-w-2xl mx-auto text-base sm:text-lg text-zinc-400 leading-relaxed font-normal">
+              Tempat bagi penulis independen, pemikir, dan pembaca di Indonesia untuk berbagi pandangan, cerita mendalam, dan wawasan yang menginspirasi.
+            </p>
+
+            <div className="flex flex-wrap items-center justify-center gap-4 pt-4">
+              {user ? (
+                <Link
+                  href="/write"
+                  className="flex items-center gap-2 px-6 py-3.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white shadow-xl shadow-indigo-600/25 transition duration-200"
+                >
+                  <PenTool className="w-4 h-4" />
+                  <span>Mulai Tulis Artikel</span>
+                </Link>
+              ) : (
+                <>
+                  <Link
+                    href="/register"
+                    className="flex items-center gap-2 px-6 py-3.5 rounded-full bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white shadow-xl shadow-indigo-600/25 transition duration-200"
+                  >
+                    <span>Mulai Menulis Gratis</span>
+                    <ArrowRight className="w-4 h-4" />
+                  </Link>
+                  <Link
+                    href="/login"
+                    className="flex items-center gap-2 px-6 py-3.5 rounded-full bg-zinc-900 hover:bg-zinc-800 border border-zinc-800 text-sm font-medium text-zinc-300 transition duration-200"
+                  >
+                    <span>Masuk ke Akun</span>
+                  </Link>
+                </>
+              )}
+            </div>
+          </div>
+        </section>
+
+        {/* Features Preview */}
+        <section className="py-20 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
+            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-indigo-950 border border-indigo-500/30 flex items-center justify-center text-indigo-400">
+                <PenTool className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Block-Based Editor</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Tulis artikel dengan mudah menggunakan rich-text editor berbasis blok yang intuitif, mendukung gambar, quote, dan code blocks.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-purple-950 border border-purple-500/30 flex items-center justify-center text-purple-400">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Pengalaman Membaca Maksimal</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Antarmuka bersih, estimasi waktu baca otomatis, reading progress bar, dan fitur bookmark untuk kenyamanan pembaca.
+              </p>
+            </div>
+
+            <div className="p-6 rounded-2xl bg-zinc-900/50 border border-zinc-800/80 space-y-3">
+              <div className="w-10 h-10 rounded-xl bg-pink-950 border border-pink-500/30 flex items-center justify-center text-pink-400">
+                <Users className="w-5 h-5" />
+              </div>
+              <h3 className="text-lg font-bold text-white">Interaksi Komunitas</h3>
+              <p className="text-xs text-zinc-400 leading-relaxed">
+                Berikan apresiasi lewat fitur Clap berkali-kali, ikuti penulis favorit, dan diskusikan artikel melalui kolom komentar.
+              </p>
+            </div>
+          </div>
+        </section>
       </main>
+
+      {/* Footer */}
+      <footer className="border-t border-zinc-800/80 bg-zinc-950 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
+          <div>
+            &copy; {new Date().getFullYear()} LOKA. Dunia Untuk Semua Cerita.
+          </div>
+          <div className="flex items-center gap-6">
+            <Link href="/" className="hover:text-zinc-300 transition">Tentang</Link>
+            <Link href="/" className="hover:text-zinc-300 transition">Syarat & Ketentuan</Link>
+            <Link href="/" className="hover:text-zinc-300 transition">Privasi</Link>
+          </div>
+        </div>
+      </footer>
     </div>
-  );
+  )
 }
