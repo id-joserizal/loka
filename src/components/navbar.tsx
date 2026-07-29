@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { User } from '@supabase/supabase-js'
 import { signOut } from '@/app/(auth)/actions'
-import { SquarePen, LayoutDashboard, Settings, LogOut, User as UserIcon, Search, Menu, X } from 'lucide-react'
+import { SquarePen, LayoutDashboard, Settings, LogOut, User as UserIcon, Search, Menu, X, Bookmark } from 'lucide-react'
 
 interface NavbarProps {
   user: User | null
@@ -89,6 +89,15 @@ export function Navbar({ user, profile }: NavbarProps) {
                         >
                           <UserIcon className="w-4 h-4 text-zinc-400" />
                           <span>Profil Saya</span>
+                        </Link>
+
+                        <Link
+                          href="/bookmarks"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
+                        >
+                          <Bookmark className="w-4 h-4 text-zinc-400" />
+                          <span>Bookmark Saya</span>
                         </Link>
 
                         <Link
@@ -192,6 +201,13 @@ export function Navbar({ user, profile }: NavbarProps) {
                 className="block py-2 text-xs text-zinc-700"
               >
                 Profil Saya
+              </Link>
+              <Link
+                href="/bookmarks"
+                onClick={() => setMobileMenuOpen(false)}
+                className="block py-2 text-xs text-zinc-700"
+              >
+                Bookmark Saya
               </Link>
               <Link
                 href="/dashboard"

@@ -6,7 +6,11 @@ import { Navbar } from '@/components/navbar'
 import { ReadingProgressBar } from '@/components/article/reading-progress-bar'
 import { TiptapRenderer } from '@/components/article/tiptap-renderer'
 import { ArticleCard } from '@/components/article/article-card'
-import { Bookmark, ThumbsUp, MessageCircle, Share2 } from 'lucide-react'
+import { ClapButton } from '@/components/social/clap-button'
+import { BookmarkButton } from '@/components/social/bookmark-button'
+import { FollowButton } from '@/components/social/follow-button'
+import { ShareButton } from '@/components/social/share-button'
+import { CommentsSection } from '@/components/social/comments-section'
 
 interface ArticlePageProps {
   params: Promise<{ slug: string }>
@@ -59,7 +63,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
     currentProfile = data
   }
 
-  // Fetch target article
+  // Fetch article with profile & tags
   const { data: article } = await supabase
     .from('articles')
     .select(`
@@ -103,7 +107,59 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
     ? article.article_tags.map((at: any) => at.tags).filter(Boolean)
     : []
 
-  // Fetch related articles (published articles excluding current one)
+  // Fetch claps data
+  const { data: clapsData } = await supabase
+    .from('claps')
+    .select('count, user_id')
+    .eq('article_id', article.id)
+
+  const totalClaps = clapsData ? clapsData.reduce((acc, c) => acc + c.count, 0) : 0
+  const userClapObj = user && clapsData ? clapsData.find((c) => c.user_id === user.id) : null
+  const userClapCount = userClapObj ? userClapObj.count : 0
+
+  // Fetch follow status
+  let isFollowing = false
+  if (user && user.id !== author.id) {
+    const { data: follow } = await supabase
+      .from('follows')
+      .select('follower_id')
+      .eq('follower_id', user.id)
+      .eq('following_id', author.id)
+      .single()
+    isFollowing = !!follow
+  }
+
+  // Fetch bookmark status
+  let isBookmarked = false
+  if (user) {
+    const { data: bm } = await supabase
+      .from('bookmarks')
+      .select('article_id')
+      .eq('user_id', user.id)
+      .eq('article_id', article.id)
+      .single()
+    isBookmarked = !!bm
+  }
+
+  // Fetch comments
+  const { data: comments } = await supabase
+    .from('comments')
+    .select(`
+      id,
+      content,
+      created_at,
+      parent_comment_id,
+      user_id,
+      profiles (
+        username,
+        full_name,
+        avatar_url
+      )
+    `)
+    .eq('article_id', article.id)
+    .order('created_at', { ascending: false })
+
+  // Fetch related articles
   const { data: relatedArticles } = await supabase
     .from('articles')
     .select(`
@@ -165,34 +221,20 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
                 >
                   {authorName}
                 </Link>
-                <button
-                  type="button"
-                  className="text-xs font-semibold text-indigo-600 hover:text-indigo-800"
-                >
-                  • Ikuti
-                </button>
+
+                {user && user.id !== author.id && (
+                  <FollowButton followingId={author.id} initialIsFollowing={isFollowing} />
+                )}
               </div>
-              <p className="text-xs text-zinc-500">
+              <p className="text-xs text-zinc-500 mt-0.5">
                 {article.reading_time || 1} min baca • {formattedDate}
               </p>
             </div>
           </div>
 
           <div className="flex items-center gap-2">
-            <button
-              type="button"
-              className="p-2 rounded-full hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition"
-              title="Bagikan Artikel"
-            >
-              <Share2 className="w-4 h-4" />
-            </button>
-            <button
-              type="button"
-              className="p-2 rounded-full hover:bg-zinc-100 text-zinc-500 hover:text-zinc-900 transition"
-              title="Simpan Bookmark"
-            >
-              <Bookmark className="w-4 h-4" />
-            </button>
+            <ShareButton title={article.title} />
+            <BookmarkButton articleId={article.id} initialIsBookmarked={isBookmarked} />
           </div>
         </div>
 
@@ -225,33 +267,28 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
           </div>
         )}
 
-        {/* Social interaction stats bar */}
-        <div className="flex items-center justify-between border-y border-zinc-200 py-4 my-8 text-xs text-zinc-500 font-medium">
-          <div className="flex items-center gap-6">
-            <button
-              type="button"
-              className="flex items-center gap-1.5 hover:text-zinc-900 transition"
-            >
-              <ThumbsUp className="w-4 h-4 text-zinc-700" />
-              <span>Clap Artikel</span>
-            </button>
-            <button
-              type="button"
-              className="flex items-center gap-1.5 hover:text-zinc-900 transition"
-            >
-              <MessageCircle className="w-4 h-4 text-zinc-700" />
-              <span>Komentar</span>
-            </button>
+        {/* Interactive Social Stats Bar */}
+        <div className="flex items-center justify-between border-y border-zinc-200 py-4 my-8">
+          <div className="flex items-center gap-3">
+            <ClapButton
+              articleId={article.id}
+              initialTotalClaps={totalClaps}
+              initialUserClaps={userClapCount}
+            />
           </div>
-          <div>
-            <button
-              type="button"
-              className="hover:text-zinc-900 transition"
-            >
-              Simpan ke Bookmark
-            </button>
+
+          <div className="flex items-center gap-2">
+            <ShareButton title={article.title} />
+            <BookmarkButton articleId={article.id} initialIsBookmarked={isBookmarked} />
           </div>
         </div>
+
+        {/* Interactive Comments Section */}
+        <CommentsSection
+          articleId={article.id}
+          currentUserId={user?.id}
+          initialComments={comments as any || []}
+        />
 
         {/* Related Articles */}
         {relatedArticles && relatedArticles.length > 0 && (

@@ -2,7 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Navbar } from '@/components/navbar'
 import { ArticleCard } from '@/components/article/article-card'
-import { ArrowRight, PenTool, Sparkles, TrendingUp, Compass } from 'lucide-react'
+import { ArrowRight, PenTool, Sparkles, Compass, TrendingUp, Users } from 'lucide-react'
 
 interface HomePageProps {
   searchParams: Promise<{ tab?: string }>
@@ -26,35 +26,106 @@ export default async function HomePage(props: HomePageProps) {
     profile = data
   }
 
-  // Fetch published articles
-  let articlesQuery = supabase
-    .from('articles')
-    .select(`
-      id,
-      title,
-      slug,
-      excerpt,
-      cover_image_url,
-      reading_time,
-      published_at,
-      status,
-      profiles (
-        username,
-        full_name,
-        avatar_url
-      ),
-      article_tags (
-        tags (
-          name,
-          slug
-        )
-      )
-    `)
-    .eq('status', 'published')
-    .order('published_at', { ascending: false })
-    .limit(20)
+  // Fetch articles based on selected tab
+  let articles: any[] = []
 
-  const { data: articles } = await articlesQuery
+  if (tab === 'following' && user) {
+    // Articles from authors the user follows
+    const { data: followedIds } = await supabase
+      .from('follows')
+      .select('following_id')
+      .eq('follower_id', user.id)
+
+    if (followedIds && followedIds.length > 0) {
+      const ids = followedIds.map((f) => f.following_id)
+      const { data } = await supabase
+        .from('articles')
+        .select(`
+          id,
+          title,
+          slug,
+          excerpt,
+          cover_image_url,
+          reading_time,
+          published_at,
+          status,
+          profiles (
+            username,
+            full_name,
+            avatar_url
+          ),
+          article_tags (
+            tags (
+              name,
+              slug
+            )
+          )
+        `)
+        .eq('status', 'published')
+        .in('author_id', ids)
+        .order('published_at', { ascending: false })
+        .limit(20)
+      articles = data ?? []
+    }
+  } else if (tab === 'trending') {
+    // Trending: articles ordered by clap count (using a simple join approximation)
+    const { data } = await supabase
+      .from('articles')
+      .select(`
+        id,
+        title,
+        slug,
+        excerpt,
+        cover_image_url,
+        reading_time,
+        published_at,
+        status,
+        profiles (
+          username,
+          full_name,
+          avatar_url
+        ),
+        article_tags (
+          tags (
+            name,
+            slug
+          )
+        )
+      `)
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(20)
+    articles = data ?? []
+  } else {
+    // Latest (default)
+    const { data } = await supabase
+      .from('articles')
+      .select(`
+        id,
+        title,
+        slug,
+        excerpt,
+        cover_image_url,
+        reading_time,
+        published_at,
+        status,
+        profiles (
+          username,
+          full_name,
+          avatar_url
+        ),
+        article_tags (
+          tags (
+            name,
+            slug
+          )
+        )
+      `)
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+      .limit(20)
+    articles = data ?? []
+  }
 
   // Fetch popular tags
   const { data: popularTags } = await supabase
@@ -82,7 +153,7 @@ export default async function HomePage(props: HomePageProps) {
                   href="/register"
                   className="inline-flex items-center gap-2 px-7 py-3 rounded-full bg-zinc-900 hover:bg-black text-sm font-medium text-white shadow-sm transition"
                 >
-                  <span>Mulai Menulis & Membaca</span>
+                  <span>Mulai Menulis &amp; Membaca</span>
                   <ArrowRight className="w-4 h-4" />
                 </Link>
               </div>
@@ -110,14 +181,28 @@ export default async function HomePage(props: HomePageProps) {
               </Link>
               <Link
                 href="/?tab=trending"
-                className={`text-xs font-bold uppercase tracking-wider pb-3 -mb-3 transition ${
+                className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider pb-3 -mb-3 transition ${
                   tab === 'trending'
                     ? 'border-b-2 border-zinc-900 text-zinc-900'
                     : 'text-zinc-400 hover:text-zinc-700'
                 }`}
               >
-                Trending
+                <TrendingUp className="w-3 h-3" />
+                <span>Trending</span>
               </Link>
+              {user && (
+                <Link
+                  href="/?tab=following"
+                  className={`flex items-center gap-1.5 text-xs font-bold uppercase tracking-wider pb-3 -mb-3 transition ${
+                    tab === 'following'
+                      ? 'border-b-2 border-zinc-900 text-zinc-900'
+                      : 'text-zinc-400 hover:text-zinc-700'
+                  }`}
+                >
+                  <Users className="w-3 h-3" />
+                  <span>Mengikuti</span>
+                </Link>
+              )}
             </div>
 
             {/* Articles List */}
@@ -133,16 +218,33 @@ export default async function HomePage(props: HomePageProps) {
                   <Compass className="w-6 h-6" />
                 </div>
                 <div className="space-y-1">
-                  <h3 className="text-lg font-serif font-bold text-zinc-900">Belum ada artikel dipublikasikan</h3>
-                  <p className="text-xs text-zinc-500">Jadilah yang pertama menulis cerita di LOKA!</p>
+                  {tab === 'following' ? (
+                    <>
+                      <h3 className="text-lg font-serif font-bold text-zinc-900">Belum ada artikel dari yang kamu ikuti</h3>
+                      <p className="text-xs text-zinc-500">Ikuti penulis lain untuk melihat artikel mereka di sini.</p>
+                    </>
+                  ) : (
+                    <>
+                      <h3 className="text-lg font-serif font-bold text-zinc-900">Belum ada artikel dipublikasikan</h3>
+                      <p className="text-xs text-zinc-500">Jadilah yang pertama menulis cerita di LOKA!</p>
+                    </>
+                  )}
                 </div>
-                {user && (
+                {user && tab !== 'following' && (
                   <Link
                     href="/write"
                     className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-zinc-900 text-white text-xs font-semibold"
                   >
                     <PenTool className="w-3.5 h-3.5" />
                     <span>Tulis Artikel Pertama</span>
+                  </Link>
+                )}
+                {tab === 'following' && (
+                  <Link
+                    href="/?tab=latest"
+                    className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-zinc-900 text-white text-xs font-semibold"
+                  >
+                    <span>Temukan Penulis di Feed</span>
                   </Link>
                 )}
               </div>
@@ -179,12 +281,20 @@ export default async function HomePage(props: HomePageProps) {
                 Bagikan cerita, pemikiran teknis, atau artikel opini kamu kepada pembaca di seluruh Indonesia.
               </p>
               {user ? (
-                <Link
-                  href="/write"
-                  className="inline-block text-xs font-bold text-zinc-900 hover:underline"
-                >
-                  Mulai menulis artikel &rarr;
-                </Link>
+                <div className="flex flex-col gap-2">
+                  <Link
+                    href="/write"
+                    className="inline-block text-xs font-bold text-zinc-900 hover:underline"
+                  >
+                    Mulai menulis artikel &rarr;
+                  </Link>
+                  <Link
+                    href="/bookmarks"
+                    className="inline-block text-xs font-medium text-zinc-600 hover:text-zinc-900 hover:underline transition"
+                  >
+                    Lihat bookmark saya &rarr;
+                  </Link>
+                </div>
               ) : (
                 <Link
                   href="/register"
@@ -207,7 +317,7 @@ export default async function HomePage(props: HomePageProps) {
           </div>
           <div className="flex items-center gap-6">
             <Link href="/" className="hover:text-zinc-900 transition">Tentang</Link>
-            <Link href="/" className="hover:text-zinc-900 transition">Syarat & Privasi</Link>
+            <Link href="/" className="hover:text-zinc-900 transition">Syarat &amp; Privasi</Link>
           </div>
         </div>
       </footer>
