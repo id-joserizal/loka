@@ -6,6 +6,15 @@ export async function updateSession(request: NextRequest) {
     request,
   })
 
+  // Jika ada parameter ?code=... dari Supabase Auth tetapi mendarat di halaman selain /auth/callback,
+  // alihkan otomatis ke /auth/callback agar token ditukar menjadi sesi cookie
+  const code = request.nextUrl.searchParams.get('code')
+  if (code && !request.nextUrl.pathname.startsWith('/auth/callback')) {
+    const redirectUrl = request.nextUrl.clone()
+    redirectUrl.pathname = '/auth/callback'
+    return NextResponse.redirect(redirectUrl)
+  }
+
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY!,
