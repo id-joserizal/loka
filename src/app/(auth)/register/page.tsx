@@ -43,15 +43,15 @@ export default function RegisterPage(props: { searchParams: SearchParams }) {
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center lg:text-left">
-        <h1 className="text-3xl font-bold tracking-tight text-white">Buat Akun LOKA</h1>
-        <p className="text-sm text-zinc-400">
+        <h1 className="text-3xl font-serif font-bold text-zinc-900">Buat Akun LOKA</h1>
+        <p className="text-sm text-zinc-500">
           Bergabunglah dengan ribuan penulis dan pembaca di Indonesia.
         </p>
       </div>
 
       {errorMessage && (
-        <div className="p-4 rounded-xl bg-red-950/60 border border-red-800/80 text-red-200 text-sm flex items-start gap-3">
-          <div className="w-2 h-2 rounded-full bg-red-400 mt-1.5 flex-shrink-0" />
+        <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-3">
+          <div className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
           <span>{errorMessage}</span>
         </div>
       )}
@@ -61,10 +61,10 @@ export default function RegisterPage(props: { searchParams: SearchParams }) {
         type="button"
         onClick={handleGoogleLogin}
         disabled={isGooglePending || isPending}
-        className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-xl bg-zinc-900 hover:bg-zinc-850 border border-zinc-800 text-sm font-medium text-zinc-200 hover:text-white transition duration-200 disabled:opacity-50"
+        className="w-full flex items-center justify-center gap-3 py-3 px-4 rounded-full bg-white hover:bg-zinc-50 border border-zinc-300 text-sm font-medium text-zinc-700 transition duration-150 disabled:opacity-50 shadow-sm"
       >
         {isGooglePending ? (
-          <Loader2 className="w-4 h-4 animate-spin text-zinc-400" />
+          <Loader2 className="w-4 h-4 animate-spin text-zinc-500" />
         ) : (
           <svg className="w-5 h-5" viewBox="0 0 24 24">
             <path
@@ -89,51 +89,51 @@ export default function RegisterPage(props: { searchParams: SearchParams }) {
       </button>
 
       <div className="relative flex items-center justify-center">
-        <div className="border-t border-zinc-800 w-full" />
-        <span className="bg-zinc-950 px-3 text-xs uppercase tracking-wider text-zinc-500 font-medium">atau</span>
+        <div className="border-t border-zinc-200 w-full" />
+        <span className="bg-white px-3 text-xs uppercase tracking-wider text-zinc-400 font-medium">atau</span>
       </div>
 
       <form onSubmit={handleRegister} className="space-y-4">
         <input type="hidden" name="redirectTo" value={searchParams.redirectTo || '/'} />
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-zinc-300">Nama Lengkap</label>
+          <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider">Nama Lengkap</label>
           <input
             type="text"
             name="fullName"
             required
             placeholder="John Doe"
-            className="w-full px-4 py-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition duration-150"
+            className="w-full px-4 py-2.5 rounded-xl bg-white border border-zinc-300 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition"
           />
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-zinc-300">Email</label>
+          <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider">Email</label>
           <input
             type="email"
             name="email"
             required
             placeholder="nama@email.com"
-            className="w-full px-4 py-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition duration-150"
+            className="w-full px-4 py-2.5 rounded-xl bg-white border border-zinc-300 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition"
           />
         </div>
 
         <div className="space-y-1.5">
-          <label className="text-xs font-medium text-zinc-300">Password</label>
+          <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider">Password</label>
           <input
             type="password"
             name="password"
             required
             minLength={6}
             placeholder="Minimal 6 karakter"
-            className="w-full px-4 py-2.5 rounded-xl bg-zinc-900/90 border border-zinc-800 text-sm text-zinc-100 placeholder-zinc-500 focus:outline-none focus:ring-2 focus:ring-indigo-500/50 focus:border-indigo-500 transition duration-150"
+            className="w-full px-4 py-2.5 rounded-xl bg-white border border-zinc-300 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:ring-2 focus:ring-black/10 focus:border-black transition"
           />
         </div>
 
         <button
           type="submit"
           disabled={isPending || isGooglePending}
-          className="w-full mt-2 flex items-center justify-center gap-2 py-3 px-4 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-sm font-semibold text-white shadow-lg shadow-indigo-600/20 transition duration-200 disabled:opacity-50"
+          className="w-full mt-2 flex items-center justify-center gap-2 py-3 px-4 rounded-full bg-zinc-900 hover:bg-black text-sm font-semibold text-white shadow-md transition duration-150 disabled:opacity-50"
         >
           {isPending ? (
             <Loader2 className="w-4 h-4 animate-spin" />
@@ -146,9 +146,9 @@ export default function RegisterPage(props: { searchParams: SearchParams }) {
         </button>
       </form>
 
-      <p className="text-center text-xs text-zinc-400">
+      <p className="text-center text-xs text-zinc-500">
         Sudah punya akun?{' '}
-        <Link href="/login" className="font-medium text-indigo-400 hover:text-indigo-300 underline underline-offset-4">
+        <Link href="/login" className="font-semibold text-zinc-900 hover:underline underline-offset-4">
           Masuk di sini
         </Link>
       </p>
