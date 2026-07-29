@@ -1,9 +1,15 @@
 import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Navbar } from '@/components/navbar'
-import { ArrowRight, BookOpen, PenTool, Users, Sparkles } from 'lucide-react'
+import { ArticleCard } from '@/components/article/article-card'
+import { ArrowRight, PenTool, Sparkles, TrendingUp, Compass } from 'lucide-react'
 
-export default async function HomePage() {
+interface HomePageProps {
+  searchParams: Promise<{ tab?: string }>
+}
+
+export default async function HomePage(props: HomePageProps) {
+  const { tab = 'latest' } = await props.searchParams
   const supabase = await createClient()
 
   const {
@@ -20,103 +26,187 @@ export default async function HomePage() {
     profile = data
   }
 
+  // Fetch published articles
+  let articlesQuery = supabase
+    .from('articles')
+    .select(`
+      id,
+      title,
+      slug,
+      excerpt,
+      cover_image_url,
+      reading_time,
+      published_at,
+      status,
+      profiles (
+        username,
+        full_name,
+        avatar_url
+      ),
+      article_tags (
+        tags (
+          name,
+          slug
+        )
+      )
+    `)
+    .eq('status', 'published')
+    .order('published_at', { ascending: false })
+    .limit(20)
+
+  const { data: articles } = await articlesQuery
+
+  // Fetch popular tags
+  const { data: popularTags } = await supabase
+    .from('tags')
+    .select('name, slug')
+    .limit(8)
+
   return (
     <div className="min-h-screen flex flex-col bg-white text-zinc-900 selection:bg-zinc-900 selection:text-white">
       <Navbar user={user} profile={profile} />
 
-      {/* Medium-style Editorial Hero Section */}
-      <main className="flex-1">
-        <section className="border-b border-zinc-900 bg-[#FAF9F5] py-20 lg:py-28">
-          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between gap-12">
-            <div className="max-w-2xl space-y-6">
-              <h1 className="text-5xl sm:text-7xl md:text-8xl font-serif font-normal tracking-tight text-zinc-900 leading-[1.02]">
+      {/* Hero Banner for Guests */}
+      {!user && (
+        <section className="border-b border-zinc-900 bg-[#FAF9F5] py-16 lg:py-24">
+          <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col lg:flex-row items-center justify-between gap-10">
+            <div className="max-w-2xl space-y-5">
+              <h1 className="text-4xl sm:text-6xl font-serif font-bold tracking-tight text-zinc-900 leading-[1.05]">
                 Dunia Untuk Semua Cerita.
               </h1>
-
-              <p className="text-xl sm:text-2xl text-zinc-700 font-serif leading-relaxed">
+              <p className="text-lg sm:text-xl text-zinc-700 font-serif leading-relaxed">
                 Tempat bagi penulis independen, pemikir, dan pembaca di Indonesia untuk berbagi pandangan dan gagasan mendalam.
               </p>
+              <div className="pt-2">
+                <Link
+                  href="/register"
+                  className="inline-flex items-center gap-2 px-7 py-3 rounded-full bg-zinc-900 hover:bg-black text-sm font-medium text-white shadow-sm transition"
+                >
+                  <span>Mulai Menulis & Membaca</span>
+                  <ArrowRight className="w-4 h-4" />
+                </Link>
+              </div>
+            </div>
+          </div>
+        </section>
+      )}
 
-              <div className="pt-4">
-                {user ? (
+      {/* Main Feed Content Area */}
+      <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
+          {/* Left / Main Articles Feed */}
+          <div className="lg:col-span-8 space-y-6">
+            {/* Feed Tabs */}
+            <div className="flex items-center gap-6 border-b border-zinc-200 pb-3">
+              <Link
+                href="/?tab=latest"
+                className={`text-xs font-bold uppercase tracking-wider pb-3 -mb-3 transition ${
+                  tab === 'latest'
+                    ? 'border-b-2 border-zinc-900 text-zinc-900'
+                    : 'text-zinc-400 hover:text-zinc-700'
+                }`}
+              >
+                Terbaru
+              </Link>
+              <Link
+                href="/?tab=trending"
+                className={`text-xs font-bold uppercase tracking-wider pb-3 -mb-3 transition ${
+                  tab === 'trending'
+                    ? 'border-b-2 border-zinc-900 text-zinc-900'
+                    : 'text-zinc-400 hover:text-zinc-700'
+                }`}
+              >
+                Trending
+              </Link>
+            </div>
+
+            {/* Articles List */}
+            {articles && articles.length > 0 ? (
+              <div className="divide-y divide-zinc-100">
+                {articles.map((art: any) => (
+                  <ArticleCard key={art.id} article={art} />
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-20 space-y-4">
+                <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
+                  <Compass className="w-6 h-6" />
+                </div>
+                <div className="space-y-1">
+                  <h3 className="text-lg font-serif font-bold text-zinc-900">Belum ada artikel dipublikasikan</h3>
+                  <p className="text-xs text-zinc-500">Jadilah yang pertama menulis cerita di LOKA!</p>
+                </div>
+                {user && (
                   <Link
                     href="/write"
-                    className="inline-flex items-center gap-2 px-7 py-3 rounded-full bg-zinc-900 hover:bg-black text-base font-medium text-white shadow-sm transition duration-150"
+                    className="inline-flex items-center gap-2 px-5 py-2 rounded-full bg-zinc-900 text-white text-xs font-semibold"
                   >
-                    <PenTool className="w-4 h-4" />
-                    <span>Mulai Menulis</span>
-                  </Link>
-                ) : (
-                  <Link
-                    href="/register"
-                    className="inline-flex items-center gap-2 px-8 py-3.5 rounded-full bg-zinc-900 hover:bg-black text-base font-medium text-white shadow-sm transition duration-150"
-                  >
-                    <span>Mulai Membaca & Menulis</span>
-                    <ArrowRight className="w-5 h-5" />
+                    <PenTool className="w-3.5 h-3.5" />
+                    <span>Tulis Artikel Pertama</span>
                   </Link>
                 )}
               </div>
-            </div>
+            )}
+          </div>
 
-            {/* Minimalist Graphic Illustration */}
-            <div className="hidden lg:flex items-center justify-center w-80 h-80 rounded-full border border-zinc-300 bg-white/60 p-8 text-center">
+          {/* Right Sidebar: Topics / Recommended */}
+          <aside className="lg:col-span-4 space-y-8 lg:pl-6 lg:border-l lg:border-zinc-200">
+            {/* Popular Topics */}
+            {popularTags && popularTags.length > 0 && (
               <div className="space-y-4">
-                <span className="text-6xl font-serif font-bold text-zinc-900">M</span>
-                <p className="text-xs font-serif italic text-zinc-500">
-                  &ldquo;Tulisan yang baik menemukan jalannya sendiri.&rdquo;
-                </p>
+                <h3 className="text-xs font-bold uppercase tracking-wider text-zinc-900 flex items-center gap-2">
+                  <Sparkles className="w-3.5 h-3.5 text-zinc-700" />
+                  <span>Topik Populer</span>
+                </h3>
+                <div className="flex flex-wrap gap-2">
+                  {popularTags.map((t: any) => (
+                    <Link
+                      key={t.slug}
+                      href={`/tag/${t.slug}`}
+                      className="px-3.5 py-1.5 rounded-full bg-zinc-100 hover:bg-zinc-200 text-xs font-medium text-zinc-800 transition"
+                    >
+                      {t.name}
+                    </Link>
+                  ))}
+                </div>
               </div>
-            </div>
-          </div>
-        </section>
+            )}
 
-        {/* Trending / Features Grid Section */}
-        <section className="py-16 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex items-center gap-2 mb-10 pb-4 border-b border-zinc-200">
-            <Sparkles className="w-4 h-4 text-zinc-900" />
-            <h2 className="text-xs font-bold uppercase tracking-widest text-zinc-900">
-              Mengapa LOKA?
-            </h2>
-          </div>
-
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-10">
-            <div className="space-y-3">
-              <div className="text-2xl font-serif font-bold text-zinc-400">01</div>
-              <h3 className="text-xl font-bold font-serif text-zinc-900">Editor Berbasis Blok</h3>
-              <p className="text-sm text-zinc-600 leading-relaxed">
-                Tulis artikel dengan kenyamanan maksimal menggunakan rich-text editor intuitif yang mendukung heading, gambar, quote, dan code blocks.
+            {/* Quick Links / Info */}
+            <div className="p-6 rounded-2xl bg-zinc-50 border border-zinc-200 space-y-3">
+              <h4 className="text-sm font-serif font-bold text-zinc-900">Menulislah di LOKA</h4>
+              <p className="text-xs text-zinc-600 leading-relaxed">
+                Bagikan cerita, pemikiran teknis, atau artikel opini kamu kepada pembaca di seluruh Indonesia.
               </p>
+              {user ? (
+                <Link
+                  href="/write"
+                  className="inline-block text-xs font-bold text-zinc-900 hover:underline"
+                >
+                  Mulai menulis artikel &rarr;
+                </Link>
+              ) : (
+                <Link
+                  href="/register"
+                  className="inline-block text-xs font-bold text-zinc-900 hover:underline"
+                >
+                  Daftar akun gratis &rarr;
+                </Link>
+              )}
             </div>
-
-            <div className="space-y-3">
-              <div className="text-2xl font-serif font-bold text-zinc-400">02</div>
-              <h3 className="text-xl font-bold font-serif text-zinc-900">Fokus Pada Konten</h3>
-              <p className="text-sm text-zinc-600 leading-relaxed">
-                Tampilan baca yang bersih tanpa gangguan iklan, dilengkapi estimasi waktu baca otomatis dan indikator progres membaca.
-              </p>
-            </div>
-
-            <div className="space-y-3">
-              <div className="text-2xl font-serif font-bold text-zinc-400">03</div>
-              <h3 className="text-xl font-bold font-serif text-zinc-900">Interaksi Komunitas</h3>
-              <p className="text-sm text-zinc-600 leading-relaxed">
-                Apresiasi tulisan favorit dengan fitur Clap berkali-kali, ikuti penulis pilihan, serta simpan ke daftar bookmark.
-              </p>
-            </div>
-          </div>
-        </section>
+          </aside>
+        </div>
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-200 bg-white py-10">
+      <footer className="border-t border-zinc-200 bg-white py-8 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
           <div className="flex items-center gap-2">
             <span className="font-serif font-bold text-zinc-900 text-sm">LOKA</span>
-            <span>&copy; {new Date().getFullYear()} — Platform Menulis & Membaca</span>
+            <span>&copy; {new Date().getFullYear()} — Dunia Untuk Semua Cerita</span>
           </div>
           <div className="flex items-center gap-6">
             <Link href="/" className="hover:text-zinc-900 transition">Tentang</Link>
-            <Link href="/" className="hover:text-zinc-900 transition">Bantuan</Link>
             <Link href="/" className="hover:text-zinc-900 transition">Syarat & Privasi</Link>
           </div>
         </div>
