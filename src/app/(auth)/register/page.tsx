@@ -4,13 +4,14 @@ import { useState, useTransition, use } from 'react'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import { signup, loginWithGoogle } from '../actions'
-import { ArrowRight, Loader2 } from 'lucide-react'
+import { ArrowRight, Loader2, CheckCircle2 } from 'lucide-react'
 
 type SearchParams = Promise<{ redirectTo?: string }>
 
 export default function RegisterPage(props: { searchParams: SearchParams }) {
   const searchParams = use(props.searchParams)
   const [errorMessage, setErrorMessage] = useState<string | null>(null)
+  const [successMessage, setSuccessMessage] = useState<string | null>(null)
   const [isPending, startTransition] = useTransition()
   const [isGooglePending, startGoogleTransition] = useTransition()
   const router = useRouter()
@@ -18,12 +19,15 @@ export default function RegisterPage(props: { searchParams: SearchParams }) {
   const handleRegister = (e: React.FormEvent<HTMLFormElement>) => {
     e.preventDefault()
     setErrorMessage(null)
+    setSuccessMessage(null)
     const formData = new FormData(e.currentTarget)
 
     startTransition(async () => {
       const res = await signup(formData)
       if (res?.error) {
         setErrorMessage(res.error)
+      } else if (res?.successMessage) {
+        setSuccessMessage(res.successMessage)
       } else {
         router.refresh()
       }
@@ -32,6 +36,7 @@ export default function RegisterPage(props: { searchParams: SearchParams }) {
 
   const handleGoogleLogin = () => {
     setErrorMessage(null)
+    setSuccessMessage(null)
     startGoogleTransition(async () => {
       const res = await loginWithGoogle()
       if (res?.error) {
@@ -53,6 +58,13 @@ export default function RegisterPage(props: { searchParams: SearchParams }) {
         <div className="p-4 rounded-xl bg-red-50 border border-red-200 text-red-700 text-sm flex items-start gap-3">
           <div className="w-2 h-2 rounded-full bg-red-500 mt-1.5 flex-shrink-0" />
           <span>{errorMessage}</span>
+        </div>
+      )}
+
+      {successMessage && (
+        <div className="p-4 rounded-xl bg-green-50 border border-green-200 text-green-800 text-sm flex items-start gap-3">
+          <CheckCircle2 className="w-5 h-5 text-green-600 shrink-0 mt-0.5" />
+          <span>{successMessage}</span>
         </div>
       )}
 

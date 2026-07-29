@@ -33,7 +33,7 @@ export async function signup(formData: FormData) {
 
   const supabase = await createClient()
 
-  const { error } = await supabase.auth.signUp({
+  const { data, error } = await supabase.auth.signUp({
     email,
     password,
     options: {
@@ -47,7 +47,16 @@ export async function signup(formData: FormData) {
     return { error: error.message }
   }
 
-  redirect(redirectTo)
+  // If session is created (Confirm email is OFF in Supabase), user is logged in -> redirect
+  if (data?.session) {
+    redirect(redirectTo)
+  }
+
+  // If session is null (Confirm email is ON in Supabase), inform user
+  return {
+    successMessage:
+      'Akun berhasil dibuat! Namun karena fitur "Confirm email" di Supabase Anda aktif, silakan matikan "Confirm email" di Supabase Dashboard -> Auth -> Email agar bisa langsung login.',
+  }
 }
 
 export async function loginWithGoogle() {
