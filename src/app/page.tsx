@@ -12,7 +12,8 @@ interface HomePageProps {
 }
 
 export default async function HomePage(props: HomePageProps) {
-  const { tab = 'latest' } = await props.searchParams
+  const resolvedSearchParams = props.searchParams ? await props.searchParams : {}
+  const { tab = 'latest' } = resolvedSearchParams
   const supabase = await createClient()
 
   const {
@@ -41,7 +42,7 @@ export default async function HomePage(props: HomePageProps) {
 
     if (followedIds && followedIds.length > 0) {
       const ids = followedIds.map((f) => f.following_id)
-      const { data } = await supabase
+      const { data, error } = await supabase
         .from('articles')
         .select(`
           id,
@@ -51,6 +52,7 @@ export default async function HomePage(props: HomePageProps) {
           cover_image_url,
           reading_time,
           published_at,
+          created_at,
           status,
           profiles (
             username,
@@ -66,13 +68,17 @@ export default async function HomePage(props: HomePageProps) {
         `)
         .eq('status', 'published')
         .in('author_id', ids)
-        .order('published_at', { ascending: false })
+        .order('published_at', { ascending: false, nullsFirst: false })
+        .order('created_at', { ascending: false })
         .limit(20)
+
+      if (error) {
+        console.error('Error fetching following articles:', error)
+      }
       articles = data ?? []
     }
   } else if (tab === 'trending') {
-    // Trending: articles ordered by clap count (using a simple join approximation)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('articles')
       .select(`
         id,
@@ -82,6 +88,7 @@ export default async function HomePage(props: HomePageProps) {
         cover_image_url,
         reading_time,
         published_at,
+        created_at,
         status,
         profiles (
           username,
@@ -96,12 +103,17 @@ export default async function HomePage(props: HomePageProps) {
         )
       `)
       .eq('status', 'published')
-      .order('published_at', { ascending: false })
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false })
       .limit(20)
+
+    if (error) {
+      console.error('Error fetching trending articles:', error)
+    }
     articles = data ?? []
   } else {
     // Latest (default)
-    const { data } = await supabase
+    const { data, error } = await supabase
       .from('articles')
       .select(`
         id,
@@ -111,6 +123,7 @@ export default async function HomePage(props: HomePageProps) {
         cover_image_url,
         reading_time,
         published_at,
+        created_at,
         status,
         profiles (
           username,
@@ -125,8 +138,13 @@ export default async function HomePage(props: HomePageProps) {
         )
       `)
       .eq('status', 'published')
-      .order('published_at', { ascending: false })
+      .order('published_at', { ascending: false, nullsFirst: false })
+      .order('created_at', { ascending: false })
       .limit(20)
+
+    if (error) {
+      console.error('Error fetching latest articles:', error)
+    }
     articles = data ?? []
   }
 

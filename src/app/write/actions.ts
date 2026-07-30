@@ -41,8 +41,8 @@ export async function saveArticle(input: SaveArticleInput) {
 
     // Determine published_at timestamp
     let publishedAt = existing?.published_at
-    if (input.status === 'published' && !publishedAt) {
-      publishedAt = new Date().toISOString()
+    if (input.status === 'published') {
+      publishedAt = publishedAt || new Date().toISOString()
     } else if (input.status === 'draft') {
       publishedAt = null
     }

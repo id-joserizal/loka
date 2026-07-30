@@ -71,6 +71,7 @@ export async function togglePublishArticle(articleId: string, currentStatus: 'dr
   }
 
   revalidatePath('/dashboard')
+  revalidatePath('/', 'layout')
   revalidatePath('/')
 
   return { success: true, newStatus }

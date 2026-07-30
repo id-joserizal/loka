@@ -26,9 +26,10 @@ export interface ArticleCardProps {
 }
 
 export function ArticleCard({ article }: ArticleCardProps) {
-  const authorName = article.profiles?.full_name || article.profiles?.username || 'Penulis'
-  const authorUsername = article.profiles?.username || 'user'
-  const authorAvatar = article.profiles?.avatar_url
+  const profileObj = Array.isArray(article.profiles) ? article.profiles[0] : article.profiles
+  const authorName = profileObj?.full_name || profileObj?.username || 'Penulis'
+  const authorUsername = profileObj?.username || 'user'
+  const authorAvatar = profileObj?.avatar_url
 
   const formattedDate = article.published_at
     ? new Date(article.published_at).toLocaleDateString('id-ID', {
