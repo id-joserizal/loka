@@ -191,24 +191,24 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
       <ReadingProgressBar />
       <Navbar user={user} profile={currentProfile} />
 
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-10 sm:py-16">
+      <main className="flex-1 max-w-[720px] w-full mx-auto px-4 py-10 sm:py-16">
         {/* Article Title */}
-        <h1 className="text-3xl sm:text-5xl font-serif font-bold text-zinc-900 leading-tight mb-6">
+        <h1 className="text-4xl sm:text-5xl md:text-[52px] font-serif font-extrabold text-zinc-900 leading-[1.12] tracking-tight mb-8">
           {article.title}
         </h1>
 
         {/* Author Header */}
-        <div className="flex items-center justify-between border-y border-zinc-200 py-4 my-8">
-          <div className="flex items-center gap-3">
+        <div className="flex items-center justify-between border-y border-zinc-200/80 py-4 my-8">
+          <div className="flex items-center gap-3.5">
             <Link href={`/profile/${authorUsername}`}>
               {authorAvatar ? (
                 <img
                   src={authorAvatar}
                   alt={authorName}
-                  className="w-11 h-11 rounded-full object-cover border border-zinc-200"
+                  className="w-12 h-12 rounded-full object-cover border border-zinc-200"
                 />
               ) : (
-                <div className="w-11 h-11 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-sm">
+                <div className="w-12 h-12 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-base">
                   {authorName.charAt(0).toUpperCase()}
                 </div>
               )}
@@ -217,7 +217,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
               <div className="flex items-center gap-2">
                 <Link
                   href={`/profile/${authorUsername}`}
-                  className="font-bold text-sm text-zinc-900 hover:underline"
+                  className="font-semibold text-base text-zinc-900 hover:underline"
                 >
                   {authorName}
                 </Link>
@@ -226,7 +226,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
                   <FollowButton followingId={author.id} initialIsFollowing={isFollowing} />
                 )}
               </div>
-              <p className="text-xs text-zinc-500 mt-0.5">
+              <p className="text-sm text-zinc-600 mt-0.5">
                 {article.reading_time || 1} min baca • {formattedDate}
               </p>
             </div>

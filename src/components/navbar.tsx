@@ -40,20 +40,20 @@ export function Navbar({ user, profile }: NavbarProps) {
             <input
               type="text"
               placeholder="Cari artikel, tag, atau penulis..."
-              className="w-full pl-9 pr-4 py-2 rounded-full bg-zinc-100/80 border border-transparent text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:bg-white focus:border-zinc-300 transition"
+              className="w-full pl-9 pr-4 py-2 rounded-full bg-zinc-100/80 border border-transparent text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none focus:bg-white focus:border-zinc-300 transition"
             />
           </div>
         </div>
 
         {/* Right side actions */}
-        <div className="hidden sm:flex items-center gap-4">
+        <div className="hidden sm:flex items-center gap-5">
           {user ? (
             <>
               <Link
                 href="/write"
-                className="flex items-center gap-2 text-xs font-medium text-zinc-600 hover:text-zinc-900 transition"
+                className="flex items-center gap-2 text-sm sm:text-base font-medium text-zinc-600 hover:text-zinc-900 transition"
               >
-                <SquarePen className="w-4 h-4" />
+                <SquarePen className="w-5 h-5" />
                 <span>Tulis</span>
               </Link>
 
@@ -61,12 +61,12 @@ export function Navbar({ user, profile }: NavbarProps) {
               <div className="relative">
                 <button
                   onClick={() => setDropdownOpen(!dropdownOpen)}
-                  className="flex items-center gap-2 p-0.5 rounded-full hover:ring-2 hover:ring-zinc-200 transition"
+                  className="flex items-center gap-2 p-0.5 rounded-full hover:ring-2 hover:ring-zinc-300 transition"
                 >
                   {avatarUrl ? (
-                    <img src={avatarUrl} alt={displayName} className="w-8 h-8 rounded-full object-cover border border-zinc-200" />
+                    <img src={avatarUrl} alt={displayName} className="w-9 h-9 rounded-full object-cover border border-zinc-200" />
                   ) : (
-                    <div className="w-8 h-8 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-xs">
+                    <div className="w-9 h-9 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-sm">
                       {displayName.charAt(0).toUpperCase()}
                     </div>
                   )}
@@ -75,17 +75,17 @@ export function Navbar({ user, profile }: NavbarProps) {
                 {dropdownOpen && (
                   <>
                     <div className="fixed inset-0 z-40" onClick={() => setDropdownOpen(false)} />
-                    <div className="absolute right-0 mt-2 w-56 rounded-2xl bg-white border border-zinc-200 shadow-xl p-1.5 z-50 divide-y divide-zinc-100">
-                      <div className="px-3 py-2.5">
-                        <p className="text-xs font-bold text-zinc-900 truncate">{displayName}</p>
-                        <p className="text-[11px] text-zinc-400 truncate">@{username}</p>
+                    <div className="absolute right-0 mt-2 w-60 rounded-2xl bg-white border border-zinc-200 shadow-xl p-2 z-50 divide-y divide-zinc-100">
+                      <div className="px-3.5 py-3">
+                        <p className="text-sm font-bold text-zinc-900 truncate">{displayName}</p>
+                        <p className="text-xs text-zinc-400 truncate">@{username}</p>
                       </div>
 
-                      <div className="py-1">
+                      <div className="py-1.5 space-y-0.5">
                         <Link
                           href={`/profile/${username}`}
                           onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
+                          className="flex items-center gap-3 px-3.5 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
                         >
                           <UserIcon className="w-4 h-4 text-zinc-400" />
                           <span>Profil Saya</span>
@@ -94,7 +94,7 @@ export function Navbar({ user, profile }: NavbarProps) {
                         <Link
                           href="/bookmarks"
                           onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
+                          className="flex items-center gap-3 px-3.5 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
                         >
                           <Bookmark className="w-4 h-4 text-zinc-400" />
                           <span>Bookmark Saya</span>
@@ -103,7 +103,7 @@ export function Navbar({ user, profile }: NavbarProps) {
                         <Link
                           href="/dashboard"
                           onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
+                          className="flex items-center gap-3 px-3.5 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
                         >
                           <LayoutDashboard className="w-4 h-4 text-zinc-400" />
                           <span>Dashboard Penulis</span>
@@ -112,18 +112,18 @@ export function Navbar({ user, profile }: NavbarProps) {
                         <Link
                           href="/settings"
                           onClick={() => setDropdownOpen(false)}
-                          className="flex items-center gap-2.5 px-3 py-2 text-xs text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
+                          className="flex items-center gap-3 px-3.5 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
                         >
                           <Settings className="w-4 h-4 text-zinc-400" />
                           <span>Pengaturan</span>
                         </Link>
                       </div>
 
-                      <div className="pt-1">
+                      <div className="pt-1.5">
                         <form action={signOut}>
                           <button
                             type="submit"
-                            className="w-full flex items-center gap-2.5 px-3 py-2 text-xs text-red-600 hover:bg-red-50 rounded-xl transition text-left"
+                            className="w-full flex items-center gap-3 px-3.5 py-2.5 text-sm text-red-600 hover:bg-red-50 rounded-xl transition text-left"
                           >
                             <LogOut className="w-4 h-4" />
                             <span>Keluar</span>
@@ -136,16 +136,16 @@ export function Navbar({ user, profile }: NavbarProps) {
               </div>
             </>
           ) : (
-            <div className="flex items-center gap-3">
+            <div className="flex items-center gap-4">
               <Link
                 href="/login"
-                className="px-3 py-1.5 text-xs font-medium text-zinc-600 hover:text-zinc-900 transition"
+                className="px-3 py-2 text-sm sm:text-base font-medium text-zinc-600 hover:text-zinc-900 transition"
               >
                 Masuk
               </Link>
               <Link
                 href="/register"
-                className="px-4 py-2 rounded-full bg-zinc-900 hover:bg-black text-xs font-medium text-white shadow-sm transition duration-150"
+                className="px-5 py-2.5 rounded-full bg-zinc-900 hover:bg-black text-sm font-medium text-white shadow-sm transition duration-150"
               >
                 Mulai Menulis
               </Link>

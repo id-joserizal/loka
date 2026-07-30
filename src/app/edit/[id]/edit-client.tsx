@@ -129,7 +129,7 @@ export function EditArticleClient({ article }: EditArticleClientProps) {
       </header>
 
       {/* Editor Canvas */}
-      <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-8 sm:py-12">
+      <main className="flex-1 max-w-[720px] w-full mx-auto px-4 py-8 sm:py-12">
         <textarea
           rows={1}
           placeholder="Judul Artikel..."
@@ -139,7 +139,7 @@ export function EditArticleClient({ article }: EditArticleClientProps) {
             e.target.style.height = 'auto'
             e.target.style.height = `${e.target.scrollHeight}px`
           }}
-          className="w-full text-4xl sm:text-5xl font-serif font-bold tracking-tight text-zinc-900 placeholder-zinc-300 border-none outline-none resize-none bg-transparent mb-6 leading-tight"
+          className="w-full text-4xl sm:text-5xl md:text-[48px] font-serif font-extrabold tracking-tight text-zinc-900 placeholder-zinc-300 border-none outline-none resize-none bg-transparent mb-6 leading-[1.12]"
         />
 
         <TiptapEditor

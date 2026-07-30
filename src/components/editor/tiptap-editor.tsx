@@ -64,7 +64,7 @@ export function TiptapEditor({ content, onChange, placeholder = 'Mulai menulis c
     editorProps: {
       attributes: {
         class:
-          'prose prose-lg max-w-none focus:outline-none min-h-[400px] text-zinc-900 font-serif leading-relaxed',
+          'focus:outline-none min-h-[400px] text-zinc-900 font-serif text-[21px] leading-[1.78] tracking-[-.003em] [&>p]:mb-6 [&>h1]:text-4xl [&>h1]:font-bold [&>h1]:mb-4 [&>h2]:text-3xl [&>h2]:font-bold [&>h2]:mb-3 [&>h3]:text-2xl [&>h3]:font-bold [&>h3]:mb-2 [&>blockquote]:border-l-[3px] [&>blockquote]:border-zinc-900 [&>blockquote]:pl-6 [&>blockquote]:italic [&>blockquote]:text-zinc-600 [&>ul]:list-disc [&>ul]:pl-6 [&>ol]:list-decimal [&>ol]:pl-6',
       },
     },
     onUpdate: ({ editor }) => {
