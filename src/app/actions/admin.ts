@@ -98,7 +98,7 @@ export async function getAdminUsers(searchQuery?: string, statusFilter?: string)
         ${withBadge ? 'badge,' : ''}
         suspended_at,
         created_at,
-        articles (id)
+        articles!author_id (id)
       `)
       .order('created_at', { ascending: false })
 
