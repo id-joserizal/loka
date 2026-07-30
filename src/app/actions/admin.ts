@@ -85,24 +85,18 @@ export async function getAdminStats() {
 export async function getAdminUsers(searchQuery?: string, statusFilter?: string) {
   const { supabase } = await getAdminSupabaseClient()
 
-  const buildQuery = (withBadge: boolean) => {
+  // Function to query profiles with fallback for missing columns
+  const fetchProfiles = async (withBadge: boolean, withRoleStatus: boolean) => {
+    let selectFields = 'id, username, full_name, avatar_url, created_at'
+    if (withRoleStatus) selectFields += ', role, status, suspended_at'
+    if (withBadge) selectFields += ', badge'
+
     let q = supabase
       .from('profiles')
-      .select(`
-        id,
-        username,
-        full_name,
-        avatar_url,
-        role,
-        status,
-        ${withBadge ? 'badge,' : ''}
-        suspended_at,
-        created_at,
-        articles!author_id (id)
-      `)
+      .select(selectFields)
       .order('created_at', { ascending: false })
 
-    if (statusFilter && statusFilter !== 'all') {
+    if (withRoleStatus && statusFilter && statusFilter !== 'all') {
       q = q.eq('status', statusFilter)
     }
 
@@ -113,23 +107,57 @@ export async function getAdminUsers(searchQuery?: string, statusFilter?: string)
     return q
   }
 
-  // Try with badge column first; fallback without if column doesn't exist yet
-  let { data, error } = await buildQuery(true)
+  // 1. Try fetching with all fields (badge, role, status)
+  let { data: profiles, error } = await fetchProfiles(true, true)
 
+  // 2. If badge column doesn't exist yet, retry without badge
   if (error) {
-    console.warn('getAdminUsers: query with badge failed, retrying without badge:', error.message)
-    ;({ data, error } = await buildQuery(false))
+    console.warn('getAdminUsers: retry without badge column:', error.message)
+    ;({ data: profiles, error } = await fetchProfiles(false, true))
+  }
+
+  // 3. If role/status columns also don't exist yet, retry minimal profiles query
+  if (error) {
+    console.warn('getAdminUsers: retry minimal query:', error.message)
+    ;({ data: profiles, error } = await fetchProfiles(false, false))
   }
 
   if (error) {
-    console.error('getAdminUsers error:', error)
+    console.error('getAdminUsers fatal error:', error)
     throw new Error(`Gagal memuat data pengguna: ${error.message}`)
   }
 
-  return (data || []).map((user: any) => ({
-    ...user,
-    badge: user.badge ?? null,
-    articleCount: Array.isArray(user.articles) ? user.articles.length : 0,
+  const userList = profiles || []
+
+  // Fetch article counts separately to avoid any PostgREST relationship embedding issues
+  const userIds = userList.map((u: any) => u.id)
+  const countMap: Record<string, number> = {}
+
+  if (userIds.length > 0) {
+    const { data: articles } = await supabase
+      .from('articles')
+      .select('author_id')
+      .in('author_id', userIds)
+
+    if (articles) {
+      for (const a of articles) {
+        if (a.author_id) {
+          countMap[a.author_id] = (countMap[a.author_id] || 0) + 1
+        }
+      }
+    }
+  }
+
+  return userList.map((user: any) => ({
+    id: user.id,
+    username: user.username,
+    full_name: user.full_name ?? null,
+    avatar_url: user.avatar_url ?? null,
+    role: user.role ?? 'user',
+    status: user.status ?? 'active',
+    badge: user.badge ?? (user.role === 'admin' ? 'black' : null),
+    created_at: user.created_at,
+    articleCount: countMap[user.id] || 0,
   }))
 }
 
