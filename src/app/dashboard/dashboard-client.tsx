@@ -145,7 +145,7 @@ function ArticleRow({ article, onDeleted, onStatusToggled }: ArticleRowProps) {
               {menuOpen && (
                 <>
                   <div className="fixed inset-0 z-30" onClick={() => setMenuOpen(false)} />
-                  <div className="absolute right-0 mt-1 w-52 rounded-2xl bg-white border border-zinc-200 shadow-xl p-1.5 z-40 space-y-0.5">
+                  <div className="absolute right-0 top-full mt-1 w-52 rounded-2xl bg-white border border-zinc-200 shadow-xl p-1.5 z-40 space-y-0.5">
                     <Link
                       href={`/edit/${article.id}`}
                       onClick={() => setMenuOpen(false)}
@@ -304,9 +304,9 @@ export function DashboardClient({ articles: initialArticles, totalClaps, totalCo
       </div>
 
       {/* Article List */}
-      <div className="bg-white border border-zinc-200 rounded-3xl overflow-hidden">
+      <div className="bg-white border border-zinc-200 rounded-3xl">
         {/* Tab Header */}
-        <div className="flex items-center gap-1 px-6 pt-5 pb-0 border-b border-zinc-100">
+        <div className="flex items-center gap-1 px-6 pt-5 pb-0 border-b border-zinc-100 rounded-t-3xl">
           {([['all', 'Semua', articles.length], ['published', 'Terbit', publishedCount], ['draft', 'Draft', draftCount]] as const).map(
             ([tab, label, count]) => (
               <button
@@ -330,7 +330,7 @@ export function DashboardClient({ articles: initialArticles, totalClaps, totalCo
         </div>
 
         {/* Article rows */}
-        <div className="px-6">
+        <div className="px-6 pb-6 min-h-[220px]">
           {filtered.length > 0 ? (
             filtered.map((article) => (
               <ArticleRow
