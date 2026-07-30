@@ -11,6 +11,7 @@ import { BookmarkButton } from '@/components/social/bookmark-button'
 import { FollowButton } from '@/components/social/follow-button'
 import { ShareButton } from '@/components/social/share-button'
 import { CommentsSection } from '@/components/social/comments-section'
+import { ArticleReportButton } from '@/components/article/article-report-button'
 
 interface ArticlePageProps {
   params: Promise<{ slug: string }>
@@ -235,6 +236,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
           <div className="flex items-center gap-2">
             <ShareButton title={article.title} />
             <BookmarkButton articleId={article.id} initialIsBookmarked={isBookmarked} />
+            {user && <ArticleReportButton articleId={article.id} articleTitle={article.title} />}
           </div>
         </div>
 

@@ -4,7 +4,7 @@ import { useState } from 'react'
 import Link from 'next/link'
 import { User } from '@supabase/supabase-js'
 import { signOut } from '@/app/(auth)/actions'
-import { SquarePen, LayoutDashboard, Settings, LogOut, User as UserIcon, Search, Menu, X, Bookmark } from 'lucide-react'
+import { SquarePen, LayoutDashboard, Settings, LogOut, User as UserIcon, Search, Menu, X, Bookmark, ShieldAlert } from 'lucide-react'
 
 interface NavbarProps {
   user: User | null
@@ -12,6 +12,7 @@ interface NavbarProps {
     username?: string | null
     full_name?: string | null
     avatar_url?: string | null
+    role?: string | null
   } | null
 }
 
@@ -99,6 +100,17 @@ export function Navbar({ user, profile }: NavbarProps) {
                           <Bookmark className="w-4 h-4 text-zinc-400" />
                           <span>Bookmark Saya</span>
                         </Link>
+
+                        {profile?.role === 'admin' && (
+                          <Link
+                            href="/admin"
+                            onClick={() => setDropdownOpen(false)}
+                            className="flex items-center gap-3 px-3.5 py-2.5 text-sm font-semibold text-amber-900 bg-amber-100/60 hover:bg-amber-100 rounded-xl transition border border-amber-200/80"
+                          >
+                            <ShieldAlert className="w-4 h-4 text-amber-700" />
+                            <span>Portal Admin</span>
+                          </Link>
+                        )}
 
                         <Link
                           href="/dashboard"

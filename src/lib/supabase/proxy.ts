@@ -44,7 +44,7 @@ export async function updateSession(request: NextRequest) {
   } = await supabase.auth.getUser()
 
   // Proteksi halaman yang memerlukan autentikasi
-  const protectedPaths = ['/dashboard', '/write', '/settings', '/bookmarks']
+  const protectedPaths = ['/dashboard', '/write', '/settings', '/bookmarks', '/admin']
   const isProtectedPath = protectedPaths.some((path) =>
     request.nextUrl.pathname.startsWith(path)
   )
@@ -54,6 +54,21 @@ export async function updateSession(request: NextRequest) {
     url.pathname = '/login'
     url.searchParams.set('redirectTo', request.nextUrl.pathname)
     return NextResponse.redirect(url)
+  }
+
+  // Proteksi khusus rute /admin (hanya user dengan role === 'admin')
+  if (request.nextUrl.pathname.startsWith('/admin') && user) {
+    const { data: profile } = await supabase
+      .from('profiles')
+      .select('role, status')
+      .eq('id', user.id)
+      .single()
+
+    if (!profile || profile.role !== 'admin') {
+      const url = request.nextUrl.clone()
+      url.pathname = '/'
+      return NextResponse.redirect(url)
+    }
   }
 
   // Redirect ke home jika sudah login tapi mengakses /login atau /register
