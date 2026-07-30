@@ -46,7 +46,7 @@ export default async function DashboardPage() {
 
   if (!rawArticles || rawArticles.length === 0) {
     return (
-      <div className="min-h-screen bg-white text-zinc-900 flex flex-col">
+      <div className="min-h-screen bg-[#F4EFEA] text-zinc-900 flex flex-col">
         <Navbar user={user} profile={profile} />
         <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-10 sm:py-16">
           <DashboardHeader profile={profile} />
@@ -98,7 +98,7 @@ export default async function DashboardPage() {
   const totalComments = Object.values(commentsByArticle).reduce((a, b) => a + b, 0)
 
   return (
-    <div className="min-h-screen bg-[#FAFAF9] text-zinc-900 flex flex-col">
+    <div className="min-h-screen bg-[#F4EFEA] text-zinc-900 flex flex-col">
       <Navbar user={user} profile={profile} />
 
       <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-10 sm:py-16">
@@ -111,7 +111,7 @@ export default async function DashboardPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-200 bg-white py-8 mt-16">
+      <footer className="border-t border-zinc-200/80 bg-[#F4EFEA] py-8 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex items-center justify-between gap-4 text-xs text-zinc-500">
           <div className="flex items-center gap-2">
             <span className="font-serif font-bold text-zinc-900 text-sm">LOKA</span>

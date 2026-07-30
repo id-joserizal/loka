@@ -66,7 +66,7 @@ export default async function BookmarksPage() {
     .filter((a: any) => a && a.status === 'published') ?? []
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900 flex flex-col">
+    <div className="min-h-screen bg-[#F4EFEA] text-zinc-900 flex flex-col">
       <Navbar user={user} profile={currentProfile} />
 
       <main className="flex-1 max-w-3xl w-full mx-auto px-4 py-10 sm:py-16">
@@ -114,7 +114,7 @@ export default async function BookmarksPage() {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-200 bg-white py-8 mt-16">
+      <footer className="border-t border-zinc-200/80 bg-[#F4EFEA] py-8 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
           <div className="flex items-center gap-2">
             <span className="font-serif font-bold text-zinc-900 text-sm">LOKA</span>

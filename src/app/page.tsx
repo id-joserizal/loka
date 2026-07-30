@@ -155,7 +155,7 @@ export default async function HomePage(props: HomePageProps) {
     .limit(8)
 
   return (
-    <div className="min-h-screen flex flex-col bg-white text-zinc-900 selection:bg-zinc-900 selection:text-white">
+    <div className="min-h-screen flex flex-col bg-[#F4EFEA] text-zinc-900 selection:bg-zinc-900 selection:text-white">
       <Navbar user={user} profile={profile} />
 
       {/* Hero Banner for Guests */}
@@ -330,7 +330,7 @@ export default async function HomePage(props: HomePageProps) {
       </main>
 
       {/* Footer */}
-      <footer className="border-t border-zinc-200 bg-white py-8 mt-16">
+      <footer className="border-t border-zinc-200/80 bg-[#F4EFEA] py-8 mt-16">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 flex flex-col sm:flex-row items-center justify-between gap-4 text-xs text-zinc-500">
           <div className="flex items-center gap-2">
             <span className="font-serif font-bold text-zinc-900 text-sm">LOKA</span>

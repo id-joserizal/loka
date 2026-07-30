@@ -76,9 +76,9 @@ export function EditArticleClient({ article }: EditArticleClientProps) {
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900 flex flex-col">
+    <div className="min-h-screen bg-[#F4EFEA] text-zinc-900 flex flex-col">
       {/* Top Header */}
-      <header className="sticky top-0 z-40 w-full border-b border-zinc-200 bg-white/95 backdrop-blur-md">
+      <header className="sticky top-0 z-40 w-full border-b border-zinc-200/80 bg-[#F4EFEA]/90 backdrop-blur-md">
         <div className="max-w-5xl mx-auto px-4 h-16 flex items-center justify-between gap-4">
           <div className="flex items-center gap-4">
             <Link

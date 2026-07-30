@@ -61,7 +61,7 @@ export default async function SearchPage(props: SearchPageProps) {
   }
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900 flex flex-col">
+    <div className="min-h-screen bg-[#F4EFEA] text-zinc-900 flex flex-col">
       <Navbar user={user} profile={currentProfile} />
 
       <main className="flex-1 max-w-4xl w-full mx-auto px-4 py-10">

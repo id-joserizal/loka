@@ -76,7 +76,7 @@ export default function RootLayout({
       lang="id"
       className={`${inter.variable} ${newsreader.variable} h-full antialiased`}
     >
-      <body className="min-h-full flex flex-col bg-white text-zinc-900 font-sans selection:bg-zinc-900 selection:text-white">
+      <body className="min-h-full flex flex-col bg-[#F4EFEA] text-zinc-900 font-sans selection:bg-zinc-900 selection:text-white">
         {children}
       </body>
     </html>

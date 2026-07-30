@@ -139,7 +139,7 @@ export function TiptapEditor({ content, onChange, placeholder = 'Mulai menulis c
       />
 
       {/* Sticky Toolbar */}
-      <div className="sticky top-16 z-30 flex flex-wrap items-center gap-1 p-1.5 rounded-2xl bg-white/90 backdrop-blur border border-zinc-200 shadow-md">
+      <div className="sticky top-16 z-30 flex flex-wrap items-center gap-1 p-1.5 rounded-2xl bg-[#F4EFEA]/95 backdrop-blur border border-zinc-200/80 shadow-md">
         <button
           type="button"
           onClick={() => editor.chain().focus().toggleBold().run()}
@@ -303,7 +303,7 @@ export function TiptapEditor({ content, onChange, placeholder = 'Mulai menulis c
       )}
 
       {/* Editor Main Content Area */}
-      <div className="bg-white p-2 min-h-[450px]">
+      <div className="bg-transparent p-2 min-h-[450px]">
         <EditorContent editor={editor} />
       </div>
     </div>

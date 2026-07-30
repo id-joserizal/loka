@@ -187,7 +187,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
     .limit(3)
 
   return (
-    <div className="min-h-screen bg-white text-zinc-900 flex flex-col">
+    <div className="min-h-screen bg-[#F4EFEA] text-zinc-900 flex flex-col">
       <ReadingProgressBar />
       <Navbar user={user} profile={currentProfile} />
 
@@ -292,7 +292,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
 
         {/* Related Articles */}
         {relatedArticles && relatedArticles.length > 0 && (
-          <section className="mt-16 pt-10 border-t border-zinc-200 space-y-6">
+          <section className="mt-16 pt-10 border-t border-zinc-200/80 space-y-6">
             <h3 className="text-xl font-serif font-bold text-zinc-900">
               Rekomendasi Artikel Lainnya
             </h3>

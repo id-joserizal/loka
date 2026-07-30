@@ -6,7 +6,7 @@ export default function AuthLayout({
   children: React.ReactNode
 }) {
   return (
-    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-white text-zinc-900">
+    <div className="min-h-screen grid grid-cols-1 lg:grid-cols-2 bg-[#F4EFEA] text-zinc-900">
       {/* Left Editorial Banner */}
       <div className="relative hidden lg:flex flex-col justify-between p-12 bg-amber-50/50 border-r border-zinc-200">
         <div className="relative z-10">
@@ -34,7 +34,7 @@ export default function AuthLayout({
       </div>
 
       {/* Right Form Container */}
-      <div className="flex flex-col justify-center items-center p-6 sm:p-12 md:p-16 bg-white">
+      <div className="flex flex-col justify-center items-center p-6 sm:p-12 md:p-16 bg-[#F4EFEA]">
         <div className="w-full max-w-md space-y-8">
           <div className="lg:hidden flex justify-center mb-4">
             <Link href="/" className="text-3xl font-serif font-bold text-zinc-900">
