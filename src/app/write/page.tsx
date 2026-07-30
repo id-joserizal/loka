@@ -45,7 +45,7 @@ export default function WritePage() {
     const res = await saveArticle({
       id: articleId,
       title: title || 'Draft Tanpa Judul',
-      content: content || {},
+      content: content ?? { type: 'doc', content: [] },
       status: 'draft',
     })
 
@@ -69,7 +69,7 @@ export default function WritePage() {
       const res = await saveArticle({
         id: articleId,
         title,
-        content,
+        content: content ?? { type: 'doc', content: [] },
         coverImageUrl: metadata.coverImageUrl,
         tags: metadata.tags,
         excerpt: metadata.excerpt,

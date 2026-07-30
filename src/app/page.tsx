@@ -54,7 +54,7 @@ export default async function HomePage(props: HomePageProps) {
           published_at,
           created_at,
           status,
-          profiles (
+          profiles:author_id (
             username,
             full_name,
             avatar_url
@@ -90,7 +90,7 @@ export default async function HomePage(props: HomePageProps) {
         published_at,
         created_at,
         status,
-        profiles (
+        profiles:author_id (
           username,
           full_name,
           avatar_url
@@ -125,7 +125,7 @@ export default async function HomePage(props: HomePageProps) {
         published_at,
         created_at,
         status,
-        profiles (
+        profiles:author_id (
           username,
           full_name,
           avatar_url

@@ -41,7 +41,7 @@ export default async function SearchPage(props: SearchPageProps) {
         reading_time,
         published_at,
         status,
-        profiles (
+        profiles:author_id (
           username,
           full_name,
           avatar_url

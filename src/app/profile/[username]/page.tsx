@@ -77,7 +77,7 @@ export default async function ProfilePage(props: ProfilePageProps) {
       cover_image_url,
       reading_time,
       published_at,
-      profiles (
+      profiles:author_id (
         username,
         full_name,
         avatar_url
