@@ -6,6 +6,8 @@ import Image from '@tiptap/extension-image'
 import Link from '@tiptap/extension-link'
 import Placeholder from '@tiptap/extension-placeholder'
 import CodeBlock from '@tiptap/extension-code-block'
+import { useRef, useState } from 'react'
+import { createClient } from '@/lib/supabase/client'
 import {
   Bold,
   Italic,
@@ -20,6 +22,7 @@ import {
   Image as ImageIcon,
   Undo,
   Redo,
+  Loader2,
 } from 'lucide-react'
 
 interface TiptapEditorProps {
@@ -29,6 +32,9 @@ interface TiptapEditorProps {
 }
 
 export function TiptapEditor({ content, onChange, placeholder = 'Mulai menulis ceritamu di sini...' }: TiptapEditorProps) {
+  const [uploadingImage, setUploadingImage] = useState(false)
+  const imageInputRef = useRef<HTMLInputElement>(null)
+
   const editor = useEditor({
     extensions: [
       StarterKit.configure({
@@ -70,10 +76,43 @@ export function TiptapEditor({ content, onChange, placeholder = 'Mulai menulis c
     return null
   }
 
-  const addImage = () => {
-    const url = window.prompt('Masukkan URL Gambar:')
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run()
+  const handleImageUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file || !editor) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Ukuran gambar maksimal 5MB.')
+      return
+    }
+
+    setUploadingImage(true)
+
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop()
+      const fileName = `article-img-${Date.now()}.${ext}`
+      const filePath = `images/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('article-covers')
+        .upload(filePath, file, { upsert: true })
+
+      if (uploadError) {
+        alert('Gagal mengunggah gambar: ' + uploadError.message)
+        return
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('article-covers')
+        .getPublicUrl(filePath)
+
+      editor.chain().focus().setImage({ src: publicUrl }).run()
+    } catch {
+      alert('Gagal mengunggah gambar.')
+    } finally {
+      setUploadingImage(false)
+      // Reset file input so same file can be selected again
+      if (imageInputRef.current) imageInputRef.current.value = ''
     }
   }
 
@@ -90,6 +129,15 @@ export function TiptapEditor({ content, onChange, placeholder = 'Mulai menulis c
 
   return (
     <div className="space-y-4">
+      {/* Hidden file input */}
+      <input
+        ref={imageInputRef}
+        type="file"
+        accept="image/*"
+        className="hidden"
+        onChange={handleImageUpload}
+      />
+
       {/* Sticky Toolbar */}
       <div className="sticky top-16 z-30 flex flex-wrap items-center gap-1 p-1.5 rounded-2xl bg-white/90 backdrop-blur border border-zinc-200 shadow-md">
         <button
@@ -208,13 +256,19 @@ export function TiptapEditor({ content, onChange, placeholder = 'Mulai menulis c
           <LinkIcon className="w-4 h-4" />
         </button>
 
+        {/* Image Upload Button */}
         <button
           type="button"
-          onClick={addImage}
-          className="p-2 rounded-lg text-xs text-zinc-600 hover:bg-zinc-100 transition"
-          title="Insert Image"
+          onClick={() => imageInputRef.current?.click()}
+          disabled={uploadingImage}
+          className="p-2 rounded-lg text-xs text-zinc-600 hover:bg-zinc-100 transition disabled:opacity-50 relative"
+          title="Unggah Gambar"
         >
-          <ImageIcon className="w-4 h-4" />
+          {uploadingImage ? (
+            <Loader2 className="w-4 h-4 animate-spin" />
+          ) : (
+            <ImageIcon className="w-4 h-4" />
+          )}
         </button>
 
         <div className="w-px h-5 bg-zinc-200 mx-1 ml-auto" />
@@ -239,6 +293,14 @@ export function TiptapEditor({ content, onChange, placeholder = 'Mulai menulis c
           <Redo className="w-4 h-4" />
         </button>
       </div>
+
+      {/* Uploading feedback */}
+      {uploadingImage && (
+        <div className="flex items-center gap-2 text-xs text-zinc-500 bg-zinc-50 border border-zinc-200 rounded-xl px-4 py-2">
+          <Loader2 className="w-3.5 h-3.5 animate-spin" />
+          <span>Mengunggah gambar ke artikel...</span>
+        </div>
+      )}
 
       {/* Editor Main Content Area */}
       <div className="bg-white p-2 min-h-[450px]">

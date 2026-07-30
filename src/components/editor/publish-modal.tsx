@@ -1,7 +1,8 @@
 'use client'
 
-import { useState } from 'react'
-import { X, Tag, Image as ImageIcon, Sparkles, Loader2 } from 'lucide-react'
+import { useState, useRef } from 'react'
+import { X, Tag, Image as ImageIcon, Sparkles, Loader2, Upload } from 'lucide-react'
+import { createClient } from '@/lib/supabase/client'
 
 interface PublishModalProps {
   isOpen: boolean
@@ -26,8 +27,50 @@ export function PublishModal({
   const [tagInput, setTagInput] = useState('')
   const [tags, setTags] = useState<string[]>(initialTags)
   const [excerpt, setExcerpt] = useState(initialExcerpt)
+  const [uploadingCover, setUploadingCover] = useState(false)
+  const [coverError, setCoverError] = useState<string | null>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
 
   if (!isOpen) return null
+
+  const handleCoverUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+
+    if (file.size > 5 * 1024 * 1024) {
+      setCoverError('Ukuran gambar maksimal 5MB.')
+      return
+    }
+
+    setCoverError(null)
+    setUploadingCover(true)
+
+    try {
+      const supabase = createClient()
+      const ext = file.name.split('.').pop()
+      const fileName = `cover-${Date.now()}.${ext}`
+      const filePath = `covers/${fileName}`
+
+      const { error: uploadError } = await supabase.storage
+        .from('article-covers')
+        .upload(filePath, file, { upsert: true })
+
+      if (uploadError) {
+        setCoverError(uploadError.message)
+        return
+      }
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('article-covers')
+        .getPublicUrl(filePath)
+
+      setCoverImageUrl(publicUrl)
+    } catch {
+      setCoverError('Gagal mengunggah gambar.')
+    } finally {
+      setUploadingCover(false)
+    }
+  }
 
   const handleAddTag = (e: React.KeyboardEvent<HTMLInputElement>) => {
     if (e.key === 'Enter' || e.key === ',') {
@@ -66,28 +109,63 @@ export function PublishModal({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-5">
-          {/* Cover Image URL */}
+          {/* Cover Image Upload */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider flex items-center gap-1.5">
               <ImageIcon className="w-3.5 h-3.5" />
-              <span>URL Gambar Cover</span>
+              <span>Gambar Cover</span>
             </label>
-            <input
-              type="url"
-              placeholder="https://images.unsplash.com/photo-..."
-              value={coverImageUrl}
-              onChange={(e) => setCoverImageUrl(e.target.value)}
-              className="w-full px-4 py-2.5 rounded-xl bg-zinc-50 border border-zinc-200 text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none focus:bg-white focus:border-zinc-900 transition"
-            />
-            {coverImageUrl && (
-              <div className="mt-2 h-36 rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100 relative">
+
+            {coverImageUrl ? (
+              <div className="relative h-40 rounded-xl overflow-hidden border border-zinc-200 bg-zinc-100 group">
                 <img
                   src={coverImageUrl}
                   alt="Cover preview"
                   className="w-full h-full object-cover"
-                  onError={() => setCoverImageUrl('')}
                 />
+                <div className="absolute inset-0 bg-black/40 opacity-0 group-hover:opacity-100 transition flex items-center justify-center">
+                  <button
+                    type="button"
+                    onClick={() => coverInputRef.current?.click()}
+                    className="flex items-center gap-2 px-4 py-2 rounded-full bg-white text-zinc-900 text-xs font-semibold shadow hover:bg-zinc-100 transition"
+                  >
+                    <Upload className="w-3.5 h-3.5" />
+                    Ganti Gambar
+                  </button>
+                </div>
               </div>
+            ) : (
+              <button
+                type="button"
+                onClick={() => coverInputRef.current?.click()}
+                disabled={uploadingCover}
+                className="w-full h-32 rounded-xl border-2 border-dashed border-zinc-300 hover:border-zinc-500 bg-zinc-50 hover:bg-zinc-100 transition flex flex-col items-center justify-center gap-2 text-zinc-500 hover:text-zinc-700"
+              >
+                {uploadingCover ? (
+                  <>
+                    <Loader2 className="w-6 h-6 animate-spin" />
+                    <span className="text-xs font-medium">Mengunggah...</span>
+                  </>
+                ) : (
+                  <>
+                    <Upload className="w-6 h-6" />
+                    <span className="text-xs font-medium">Klik untuk unggah gambar cover</span>
+                    <span className="text-[11px] text-zinc-400">JPG, PNG, WebP · Maks 5MB</span>
+                  </>
+                )}
+              </button>
+            )}
+
+            <input
+              ref={coverInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={handleCoverUpload}
+            />
+
+            {coverError && (
+              <p className="text-xs text-red-500">{coverError}</p>
             )}
           </div>
 
@@ -126,7 +204,7 @@ export function PublishModal({
             </div>
           </div>
 
-          {/* Custom Excerpt */}
+          {/* Excerpt */}
           <div className="space-y-2">
             <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider">
               Ringkasan Singkat (Excerpt)
