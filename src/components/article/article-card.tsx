@@ -1,5 +1,6 @@
 import Link from 'next/link'
 import { Bookmark } from 'lucide-react'
+import { BadgeIcon } from '@/components/ui/badge-icon'
 
 export interface ArticleCardProps {
   article: {
@@ -14,6 +15,7 @@ export interface ArticleCardProps {
       username?: string | null
       full_name?: string | null
       avatar_url?: string | null
+      badge?: string | null
     } | null
     article_tags?: Array<{
       tags: {
@@ -60,8 +62,9 @@ export function ArticleCard({ article }: ArticleCardProps) {
                 {authorName.charAt(0).toUpperCase()}
               </div>
             )}
-            <span className="text-xs font-semibold text-zinc-900 group-hover/author:underline">
+            <span className="flex items-center gap-1 text-xs font-semibold text-zinc-900 group-hover/author:underline">
               {authorName}
+              <BadgeIcon badge={profileObj?.badge} size="sm" />
             </span>
           </Link>
           <span className="text-zinc-300">•</span>

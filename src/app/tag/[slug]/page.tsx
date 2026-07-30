@@ -53,7 +53,8 @@ export default async function TagPage(props: TagPageProps) {
         profiles:author_id (
           username,
           full_name,
-          avatar_url
+          avatar_url,
+          badge
         ),
         article_tags (
           tags (

@@ -4,7 +4,6 @@ import { useState } from 'react'
 import Link from 'next/link'
 import {
   Search,
-  User,
   Shield,
   ShieldCheck,
   Ban,
@@ -12,8 +11,10 @@ import {
   Trash2,
   Loader2,
   FileText,
+  Award,
 } from 'lucide-react'
-import { toggleUserSuspend, updateUserRole, deleteUserByAdmin } from '@/app/actions/admin'
+import { toggleUserSuspend, updateUserRole, deleteUserByAdmin, updateUserBadge } from '@/app/actions/admin'
+import { BadgeIcon } from '@/components/ui/badge-icon'
 
 interface UserItem {
   id: string
@@ -22,6 +23,7 @@ interface UserItem {
   avatar_url: string | null
   role: 'user' | 'admin'
   status: 'active' | 'suspended'
+  badge?: 'blue' | 'gold' | 'black' | null
   created_at: string
   articleCount: number
 }
@@ -30,11 +32,19 @@ interface UsersClientProps {
   initialUsers: UserItem[]
 }
 
+const BADGE_OPTIONS: { value: 'blue' | 'gold' | 'black' | null; label: string; color: string }[] = [
+  { value: null, label: 'Tanpa Badge', color: 'text-zinc-500' },
+  { value: 'blue', label: '● Centang Biru', color: 'text-blue-500' },
+  { value: 'gold', label: '● Centang Emas', color: 'text-amber-500' },
+  { value: 'black', label: '● Centang Hitam', color: 'text-zinc-900' },
+]
+
 export function UsersClient({ initialUsers }: UsersClientProps) {
   const [users, setUsers] = useState<UserItem[]>(initialUsers)
   const [search, setSearch] = useState('')
   const [statusFilter, setStatusFilter] = useState<string>('all')
   const [loadingId, setLoadingId] = useState<string | null>(null)
+  const [badgeLoadingId, setBadgeLoadingId] = useState<string | null>(null)
 
   const filteredUsers = users.filter((u) => {
     const matchesSearch =
@@ -71,8 +81,10 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
     setLoadingId(user.id)
     try {
       await updateUserRole(user.id, newRole)
+      // Admin otomatis dapat badge black, downgrade hapus badge black
+      const newBadge = newRole === 'admin' ? 'black' : (user.badge === 'black' ? null : user.badge)
       setUsers((prev) =>
-        prev.map((u) => (u.id === user.id ? { ...u, role: newRole } : u))
+        prev.map((u) => (u.id === user.id ? { ...u, role: newRole, badge: newBadge } : u))
       )
     } catch (err: any) {
       alert(err.message || 'Gagal mengubah role user')
@@ -97,6 +109,25 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
       alert(err.message || 'Gagal menghapus user')
     } finally {
       setLoadingId(null)
+    }
+  }
+
+  const handleBadgeChange = async (user: UserItem, newBadge: 'blue' | 'gold' | 'black' | null) => {
+    // Admin role badge black tidak bisa diubah
+    if (user.role === 'admin' && newBadge !== 'black') {
+      alert('Role admin selalu mendapatkan centang hitam. Ubah role terlebih dahulu.')
+      return
+    }
+    setBadgeLoadingId(user.id)
+    try {
+      await updateUserBadge(user.id, newBadge)
+      setUsers((prev) =>
+        prev.map((u) => (u.id === user.id ? { ...u, badge: newBadge } : u))
+      )
+    } catch (err: any) {
+      alert(err.message || 'Gagal mengubah badge')
+    } finally {
+      setBadgeLoadingId(null)
     }
   }
 
@@ -128,6 +159,14 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
         </div>
       </div>
 
+      {/* Badge Legend */}
+      <div className="flex flex-wrap items-center gap-4 px-1 text-xs text-zinc-500">
+        <span className="font-semibold uppercase tracking-wider text-[10px]">Legenda Badge:</span>
+        <span className="flex items-center gap-1.5"><BadgeIcon badge="blue" size="sm" /> Terverifikasi (Biru)</span>
+        <span className="flex items-center gap-1.5"><BadgeIcon badge="gold" size="sm" /> Premium (Emas)</span>
+        <span className="flex items-center gap-1.5"><BadgeIcon badge="black" size="sm" /> Administrator (Hitam)</span>
+      </div>
+
       {/* Users List / Table */}
       <div className="bg-white rounded-2xl border border-zinc-200/80 shadow-sm overflow-hidden">
         <div className="overflow-x-auto">
@@ -135,6 +174,7 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
             <thead>
               <tr className="border-b border-zinc-200/80 bg-zinc-50/50 text-[11px] font-bold uppercase tracking-wider text-zinc-500">
                 <th className="py-3.5 px-4">Pengguna</th>
+                <th className="py-3.5 px-4">Badge</th>
                 <th className="py-3.5 px-4">Peran (Role)</th>
                 <th className="py-3.5 px-4">Status</th>
                 <th className="py-3.5 px-4">Artikel</th>
@@ -145,13 +185,14 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
             <tbody className="divide-y divide-zinc-200/60 text-sm">
               {filteredUsers.length === 0 ? (
                 <tr>
-                  <td colSpan={6} className="py-12 text-center text-zinc-500 text-xs">
+                  <td colSpan={7} className="py-12 text-center text-zinc-500 text-xs">
                     Tidak ada pengguna yang ditemukan.
                   </td>
                 </tr>
               ) : (
                 filteredUsers.map((user) => {
                   const isLoading = loadingId === user.id
+                  const isBadgeLoading = badgeLoadingId === user.id
                   return (
                     <tr key={user.id} className="hover:bg-zinc-50/60 transition">
                       {/* User Info */}
@@ -171,16 +212,48 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
                             )}
                           </Link>
                           <div>
-                            <Link
-                              href={`/profile/${user.username}`}
-                              className="font-bold text-zinc-900 hover:underline block leading-snug"
-                            >
-                              {user.full_name || user.username}
-                            </Link>
+                            <div className="flex items-center gap-1.5">
+                              <Link
+                                href={`/profile/${user.username}`}
+                                className="font-bold text-zinc-900 hover:underline leading-snug"
+                              >
+                                {user.full_name || user.username}
+                              </Link>
+                              <BadgeIcon badge={user.badge} size="sm" />
+                            </div>
                             <span className="text-xs text-zinc-400 font-mono">
                               @{user.username}
                             </span>
                           </div>
+                        </div>
+                      </td>
+
+                      {/* Badge Selector */}
+                      <td className="py-4 px-4">
+                        <div className="flex items-center gap-2">
+                          {isBadgeLoading ? (
+                            <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400" />
+                          ) : (
+                            <select
+                              value={user.badge ?? ''}
+                              disabled={user.role === 'admin'}
+                              onChange={(e) => {
+                                const val = e.target.value as 'blue' | 'gold' | 'black' | ''
+                                handleBadgeChange(user, val === '' ? null : val)
+                              }}
+                              className={`px-2.5 py-1.5 text-xs font-semibold rounded-xl border focus:outline-none focus:ring-2 focus:ring-zinc-900 transition ${
+                                user.role === 'admin'
+                                  ? 'bg-zinc-900 text-white border-zinc-900 cursor-not-allowed'
+                                  : 'bg-zinc-50 border-zinc-200 text-zinc-800 hover:border-zinc-400'
+                              }`}
+                              title={user.role === 'admin' ? 'Admin selalu mendapat centang hitam' : 'Pilih badge verifikasi'}
+                            >
+                              <option value="">Tanpa Badge</option>
+                              <option value="blue">✓ Centang Biru</option>
+                              <option value="gold">✓ Centang Emas</option>
+                              <option value="black">✓ Centang Hitam</option>
+                            </select>
+                          )}
                         </div>
                       </td>
 
@@ -260,9 +333,7 @@ export function UsersClient({ initialUsers }: UsersClientProps) {
                                 onClick={() => handleToggleRole(user)}
                                 className="p-1.5 rounded-lg text-zinc-500 hover:text-zinc-900 hover:bg-zinc-100 transition"
                                 title={
-                                  user.role === 'admin'
-                                    ? 'Ubah ke Role User'
-                                    : 'Jadikan Admin'
+                                  user.role === 'admin' ? 'Ubah ke Role User' : 'Jadikan Admin'
                                 }
                               >
                                 <Shield className="w-4 h-4" />

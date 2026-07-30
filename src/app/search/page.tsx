@@ -44,7 +44,8 @@ export default async function SearchPage(props: SearchPageProps) {
         profiles:author_id (
           username,
           full_name,
-          avatar_url
+          avatar_url,
+          badge
         ),
         article_tags (
           tags (

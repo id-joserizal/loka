@@ -24,7 +24,7 @@ export default async function HomePage(props: HomePageProps) {
   if (user) {
     const { data } = await supabase
       .from('profiles')
-      .select('username, full_name, avatar_url')
+      .select('username, full_name, avatar_url, role')
       .eq('id', user.id)
       .single()
     profile = data
@@ -57,7 +57,8 @@ export default async function HomePage(props: HomePageProps) {
           profiles:author_id (
             username,
             full_name,
-            avatar_url
+            avatar_url,
+            badge
           ),
           article_tags (
             tags (
@@ -93,7 +94,8 @@ export default async function HomePage(props: HomePageProps) {
         profiles:author_id (
           username,
           full_name,
-          avatar_url
+          avatar_url,
+          badge
         ),
         article_tags (
           tags (
@@ -128,7 +130,8 @@ export default async function HomePage(props: HomePageProps) {
         profiles:author_id (
           username,
           full_name,
-          avatar_url
+          avatar_url,
+          badge
         ),
         article_tags (
           tags (

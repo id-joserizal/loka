@@ -12,6 +12,7 @@ import { FollowButton } from '@/components/social/follow-button'
 import { ShareButton } from '@/components/social/share-button'
 import { CommentsSection } from '@/components/social/comments-section'
 import { ArticleReportButton } from '@/components/article/article-report-button'
+import { BadgeIcon } from '@/components/ui/badge-icon'
 
 interface ArticlePageProps {
   params: Promise<{ slug: string }>
@@ -74,6 +75,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
         username,
         full_name,
         avatar_url,
+        badge,
         bio
       ),
       article_tags (
@@ -96,6 +98,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
   const authorName = author?.full_name || author?.username || 'Penulis'
   const authorUsername = author?.username || 'user'
   const authorAvatar = author?.avatar_url
+  const authorBadge = author?.badge || null
   const formattedDate = article.published_at
     ? new Date(article.published_at).toLocaleDateString('id-ID', {
         day: 'numeric',
@@ -218,9 +221,10 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
               <div className="flex items-center gap-2">
                 <Link
                   href={`/profile/${authorUsername}`}
-                  className="font-semibold text-base text-zinc-900 hover:underline"
+                  className="flex items-center gap-1.5 font-semibold text-base text-zinc-900 hover:underline"
                 >
                   {authorName}
+                  <BadgeIcon badge={authorBadge} size="md" />
                 </Link>
 
                 {user && user.id !== author.id && (

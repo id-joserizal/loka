@@ -7,6 +7,7 @@ import { AvatarUpload } from '@/components/upload/AvatarUpload'
 import { ArticleCard } from '@/components/article/article-card'
 import { FollowButton } from '@/components/social/follow-button'
 import { Users, FileText, BookOpen } from 'lucide-react'
+import { BadgeIcon } from '@/components/ui/badge-icon'
 
 interface ProfilePageProps {
   params: Promise<{ username: string }>
@@ -59,7 +60,7 @@ export default async function ProfilePage(props: ProfilePageProps) {
   // Fetch profile being viewed
   const { data: profile } = await supabase
     .from('profiles')
-    .select('id, username, full_name, bio, avatar_url, created_at')
+    .select('id, username, full_name, bio, avatar_url, badge, created_at')
     .eq('username', username)
     .single()
 
@@ -81,7 +82,8 @@ export default async function ProfilePage(props: ProfilePageProps) {
       profiles:author_id (
         username,
         full_name,
-        avatar_url
+        avatar_url,
+        badge
       ),
       article_tags (
         tags (
@@ -151,8 +153,9 @@ export default async function ProfilePage(props: ProfilePageProps) {
           {/* Info */}
           <div className="flex-1 space-y-3">
             <div className="flex flex-wrap items-center gap-3">
-              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-zinc-900">
+              <h1 className="text-2xl sm:text-3xl font-serif font-bold text-zinc-900 flex items-center gap-2">
                 {displayName}
+                <BadgeIcon badge={(profile as any).badge} size="md" />
               </h1>
               {!isOwnProfile && user && (
                 <FollowButton followingId={profile.id} initialIsFollowing={isFollowing} />

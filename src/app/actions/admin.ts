@@ -94,6 +94,7 @@ export async function getAdminUsers(searchQuery?: string, statusFilter?: string)
       avatar_url,
       role,
       status,
+      badge,
       suspended_at,
       created_at,
       articles (id)
@@ -169,6 +170,22 @@ export async function deleteUserByAdmin(userId: string) {
 
   if (error) {
     throw new Error(`Failed to delete user: ${error.message}`)
+  }
+
+  revalidatePath('/admin/users')
+  return { success: true }
+}
+
+export async function updateUserBadge(userId: string, badge: 'blue' | 'gold' | 'black' | null) {
+  const { supabase } = await getAdminSupabaseClient()
+
+  const { error } = await supabase
+    .from('profiles')
+    .update({ badge })
+    .eq('id', userId)
+
+  if (error) {
+    throw new Error(`Failed to update user badge: ${error.message}`)
   }
 
   revalidatePath('/admin/users')
