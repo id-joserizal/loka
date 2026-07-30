@@ -85,39 +85,50 @@ export async function getAdminStats() {
 export async function getAdminUsers(searchQuery?: string, statusFilter?: string) {
   const { supabase } = await getAdminSupabaseClient()
 
-  let query = supabase
-    .from('profiles')
-    .select(`
-      id,
-      username,
-      full_name,
-      avatar_url,
-      role,
-      status,
-      badge,
-      suspended_at,
-      created_at,
-      articles (id)
-    `)
-    .order('created_at', { ascending: false })
+  const buildQuery = (withBadge: boolean) => {
+    let q = supabase
+      .from('profiles')
+      .select(`
+        id,
+        username,
+        full_name,
+        avatar_url,
+        role,
+        status,
+        ${withBadge ? 'badge,' : ''}
+        suspended_at,
+        created_at,
+        articles (id)
+      `)
+      .order('created_at', { ascending: false })
 
-  if (statusFilter && statusFilter !== 'all') {
-    query = query.eq('status', statusFilter)
+    if (statusFilter && statusFilter !== 'all') {
+      q = q.eq('status', statusFilter)
+    }
+
+    if (searchQuery && searchQuery.trim() !== '') {
+      q = q.or(`username.ilike.%${searchQuery}%,full_name.ilike.%${searchQuery}%`)
+    }
+
+    return q
   }
 
-  if (searchQuery && searchQuery.trim() !== '') {
-    query = query.or(`username.ilike.%${searchQuery}%,full_name.ilike.%${searchQuery}%`)
-  }
-
-  const { data, error } = await query
+  // Try with badge column first; fallback without if column doesn't exist yet
+  let { data, error } = await buildQuery(true)
 
   if (error) {
-    console.error('Error fetching admin users:', error)
-    return []
+    console.warn('getAdminUsers: query with badge failed, retrying without badge:', error.message)
+    ;({ data, error } = await buildQuery(false))
+  }
+
+  if (error) {
+    console.error('getAdminUsers error:', error)
+    throw new Error(`Gagal memuat data pengguna: ${error.message}`)
   }
 
   return (data || []).map((user: any) => ({
     ...user,
+    badge: user.badge ?? null,
     articleCount: Array.isArray(user.articles) ? user.articles.length : 0,
   }))
 }
