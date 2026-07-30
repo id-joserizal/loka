@@ -24,6 +24,11 @@ export const metadata: Metadata = {
   keywords: ['loka', 'artikel', 'menulis', 'membaca', 'blog', 'indonesia', 'medium indonesia', 'penulis'],
   authors: [{ name: 'LOKA Platform' }],
   creator: 'LOKA',
+  icons: {
+    icon: '/icon.png',
+    shortcut: '/icon.png',
+    apple: '/icon.png',
+  },
   openGraph: {
     type: 'website',
     locale: 'id_ID',
