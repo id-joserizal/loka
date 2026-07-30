@@ -35,7 +35,7 @@ export function EditArticleClient({ article }: EditArticleClientProps) {
       id: article.id,
       title: title || 'Draft Tanpa Judul',
       content: content || {},
-      status: 'draft',
+      status: article.status,
     })
 
     if (res.success) {
@@ -67,6 +67,7 @@ export function EditArticleClient({ article }: EditArticleClientProps) {
       setIsPublishing(false)
       if (res.success) {
         setIsPublishModalOpen(false)
+        router.refresh()
         router.push('/dashboard')
       } else {
         alert(res.error || 'Gagal mempublikasikan artikel')

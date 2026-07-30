@@ -79,6 +79,7 @@ export default function WritePage() {
       setIsPublishing(false)
       if (res.success) {
         setIsPublishModalOpen(false)
+        router.refresh()
         router.push('/dashboard')
       } else {
         alert(res.error || 'Gagal mempublikasikan artikel')

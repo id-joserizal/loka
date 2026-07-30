@@ -32,17 +32,38 @@ export async function saveArticle(input: SaveArticleInput) {
   let articleId = input.id
 
   if (articleId) {
-    // Update existing article
+    // Get existing article to check published_at and slug
+    const { data: existing } = await supabase
+      .from('articles')
+      .select('published_at, status, slug')
+      .eq('id', articleId)
+      .single()
+
+    // Determine published_at timestamp
+    let publishedAt = existing?.published_at
+    if (input.status === 'published' && !publishedAt) {
+      publishedAt = new Date().toISOString()
+    } else if (input.status === 'draft') {
+      publishedAt = null
+    }
+
+    // Update slug if it was a draft placeholder or title changed
+    let slug = existing?.slug
+    if (!slug || slug.startsWith('draft-tanpa-judul') || input.status === 'published') {
+      slug = slugify(title)
+    }
+
     const { error: updateError } = await supabase
       .from('articles')
       .update({
         title,
+        slug,
         content: input.content,
         cover_image_url: input.coverImageUrl,
         excerpt,
         status: input.status,
         reading_time: readingTime,
-        published_at: input.status === 'published' ? new Date().toISOString() : null,
+        published_at: publishedAt,
       })
       .eq('id', articleId)
       .eq('author_id', user.id)
@@ -111,6 +132,7 @@ export async function saveArticle(input: SaveArticleInput) {
   }
 
   revalidatePath('/dashboard')
+  revalidatePath('/', 'layout')
   revalidatePath('/')
 
   return { success: true, articleId }
