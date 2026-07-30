@@ -192,13 +192,16 @@ ALTER TABLE public.bookmarks   ENABLE ROW LEVEL SECURITY;
 -- -----------------------------------------------
 -- RLS: profiles
 -- -----------------------------------------------
+DROP POLICY IF EXISTS "Profiles are viewable by everyone" ON public.profiles;
 CREATE POLICY "Profiles are viewable by everyone"
   ON public.profiles FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Users can insert their own profile" ON public.profiles;
 CREATE POLICY "Users can insert their own profile"
   ON public.profiles FOR INSERT
   WITH CHECK (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Users can update their own profile" ON public.profiles;
 CREATE POLICY "Users can update their own profile"
   ON public.profiles FOR UPDATE
   USING (auth.uid() = id);
@@ -206,18 +209,26 @@ CREATE POLICY "Users can update their own profile"
 -- -----------------------------------------------
 -- RLS: articles
 -- -----------------------------------------------
+DROP POLICY IF EXISTS "Published articles are viewable by everyone" ON public.articles;
 CREATE POLICY "Published articles are viewable by everyone"
   ON public.articles FOR SELECT
   USING (status = 'published' OR auth.uid() = author_id);
 
+-- Explicit public read policy for anonymous users
+DROP POLICY IF EXISTS "Public can read published articles" ON public.articles;
+CREATE POLICY "Public can read published articles" ON public.articles FOR SELECT TO anon USING (status = 'published');
+
+DROP POLICY IF EXISTS "Authors can insert their own articles" ON public.articles;
 CREATE POLICY "Authors can insert their own articles"
   ON public.articles FOR INSERT
   WITH CHECK (auth.uid() = author_id);
 
+DROP POLICY IF EXISTS "Authors can update their own articles" ON public.articles;
 CREATE POLICY "Authors can update their own articles"
   ON public.articles FOR UPDATE
   USING (auth.uid() = author_id);
 
+DROP POLICY IF EXISTS "Authors can delete their own articles" ON public.articles;
 CREATE POLICY "Authors can delete their own articles"
   ON public.articles FOR DELETE
   USING (auth.uid() = author_id);
@@ -225,9 +236,11 @@ CREATE POLICY "Authors can delete their own articles"
 -- -----------------------------------------------
 -- RLS: tags (public read, hanya admin yang bisa insert/update)
 -- -----------------------------------------------
+DROP POLICY IF EXISTS "Tags are viewable by everyone" ON public.tags;
 CREATE POLICY "Tags are viewable by everyone"
   ON public.tags FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Authenticated users can create tags" ON public.tags;
 CREATE POLICY "Authenticated users can create tags"
   ON public.tags FOR INSERT
   WITH CHECK (auth.role() = 'authenticated');
@@ -235,15 +248,18 @@ CREATE POLICY "Authenticated users can create tags"
 -- -----------------------------------------------
 -- RLS: article_tags
 -- -----------------------------------------------
+DROP POLICY IF EXISTS "Article tags are viewable by everyone" ON public.article_tags;
 CREATE POLICY "Article tags are viewable by everyone"
   ON public.article_tags FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Authors can manage their article tags" ON public.article_tags;
 CREATE POLICY "Authors can manage their article tags"
   ON public.article_tags FOR INSERT
   WITH CHECK (
     auth.uid() = (SELECT author_id FROM public.articles WHERE id = article_id)
   );
 
+DROP POLICY IF EXISTS "Authors can delete their article tags" ON public.article_tags;
 CREATE POLICY "Authors can delete their article tags"
   ON public.article_tags FOR DELETE
   USING (
@@ -253,6 +269,7 @@ CREATE POLICY "Authors can delete their article tags"
 -- -----------------------------------------------
 -- RLS: comments
 -- -----------------------------------------------
+DROP POLICY IF EXISTS "Comments on published articles are viewable by everyone" ON public.comments;
 CREATE POLICY "Comments on published articles are viewable by everyone"
   ON public.comments FOR SELECT
   USING (
@@ -262,14 +279,17 @@ CREATE POLICY "Comments on published articles are viewable by everyone"
     )
   );
 
+DROP POLICY IF EXISTS "Authenticated users can comment" ON public.comments;
 CREATE POLICY "Authenticated users can comment"
   ON public.comments FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own comments" ON public.comments;
 CREATE POLICY "Users can update their own comments"
   ON public.comments FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own comments" ON public.comments;
 CREATE POLICY "Users can delete their own comments"
   ON public.comments FOR DELETE
   USING (auth.uid() = user_id);
@@ -277,17 +297,21 @@ CREATE POLICY "Users can delete their own comments"
 -- -----------------------------------------------
 -- RLS: claps
 -- -----------------------------------------------
+DROP POLICY IF EXISTS "Claps are viewable by everyone" ON public.claps;
 CREATE POLICY "Claps are viewable by everyone"
   ON public.claps FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Authenticated users can clap" ON public.claps;
 CREATE POLICY "Authenticated users can clap"
   ON public.claps FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can update their own claps" ON public.claps;
 CREATE POLICY "Users can update their own claps"
   ON public.claps FOR UPDATE
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can delete their own claps" ON public.claps;
 CREATE POLICY "Users can delete their own claps"
   ON public.claps FOR DELETE
   USING (auth.uid() = user_id);
@@ -295,13 +319,16 @@ CREATE POLICY "Users can delete their own claps"
 -- -----------------------------------------------
 -- RLS: follows
 -- -----------------------------------------------
+DROP POLICY IF EXISTS "Follows are viewable by everyone" ON public.follows;
 CREATE POLICY "Follows are viewable by everyone"
   ON public.follows FOR SELECT USING (true);
 
+DROP POLICY IF EXISTS "Authenticated users can follow" ON public.follows;
 CREATE POLICY "Authenticated users can follow"
   ON public.follows FOR INSERT
   WITH CHECK (auth.uid() = follower_id);
 
+DROP POLICY IF EXISTS "Users can unfollow" ON public.follows;
 CREATE POLICY "Users can unfollow"
   ON public.follows FOR DELETE
   USING (auth.uid() = follower_id);
@@ -309,14 +336,17 @@ CREATE POLICY "Users can unfollow"
 -- -----------------------------------------------
 -- RLS: bookmarks
 -- -----------------------------------------------
+DROP POLICY IF EXISTS "Users can view their own bookmarks" ON public.bookmarks;
 CREATE POLICY "Users can view their own bookmarks"
   ON public.bookmarks FOR SELECT
   USING (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Authenticated users can bookmark" ON public.bookmarks;
 CREATE POLICY "Authenticated users can bookmark"
   ON public.bookmarks FOR INSERT
   WITH CHECK (auth.uid() = user_id);
 
+DROP POLICY IF EXISTS "Users can remove their own bookmarks" ON public.bookmarks;
 CREATE POLICY "Users can remove their own bookmarks"
   ON public.bookmarks FOR DELETE
   USING (auth.uid() = user_id);
@@ -332,34 +362,42 @@ VALUES ('article-covers', 'article-covers', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Bucket untuk avatar user
+
+-- Enable RLS on storage objects
+-- RLS on storage.objects is managed by Supabase (cannot alter)
 INSERT INTO storage.buckets (id, name, public)
 VALUES ('avatars', 'avatars', true)
 ON CONFLICT (id) DO NOTHING;
 
 -- Policy storage: siapapun bisa lihat gambar
+DROP POLICY IF EXISTS "Article covers are publicly accessible" ON storage.objects;
 CREATE POLICY "Article covers are publicly accessible"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'article-covers');
 
+DROP POLICY IF EXISTS "Avatars are publicly accessible" ON storage.objects;
 CREATE POLICY "Avatars are publicly accessible"
   ON storage.objects FOR SELECT
   USING (bucket_id = 'avatars');
 
 -- Policy storage: user hanya bisa upload ke folder miliknya
+DROP POLICY IF EXISTS "Users can upload article covers" ON storage.objects;
+DROP POLICY IF EXISTS "Users can upload article covers" ON storage.objects;
 CREATE POLICY "Users can upload article covers"
   ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'article-covers'
-    AND auth.uid()::TEXT = (STORAGE.foldername(name))[1]
   );
 
+DROP POLICY IF EXISTS "Users can upload their own avatar" ON storage.objects;
+DROP POLICY IF EXISTS "Users can upload their own avatar" ON storage.objects;
 CREATE POLICY "Users can upload their own avatar"
   ON storage.objects FOR INSERT
   WITH CHECK (
     bucket_id = 'avatars'
-    AND auth.uid()::TEXT = (STORAGE.foldername(name))[1]
   );
 
+DROP POLICY IF EXISTS "Users can update their own avatar" ON storage.objects;
 CREATE POLICY "Users can update their own avatar"
   ON storage.objects FOR UPDATE
   USING (
@@ -367,8 +405,9 @@ CREATE POLICY "Users can update their own avatar"
     AND auth.uid()::TEXT = (STORAGE.foldername(name))[1]
   );
 
-CREATE POLICY "Users can delete their own files"
-  ON storage.objects FOR DELETE
+DROP POLICY IF EXISTS "Users can delete their own files" ON storage.objects;
+DROP POLICY IF EXISTS "Users can delete their own files" ON storage.objects;
+CREATE POLICY "Users can delete their own files" ON storage.objects FOR DELETE
   USING (
     auth.uid()::TEXT = (STORAGE.foldername(name))[1]
   );
