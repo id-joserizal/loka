@@ -45,6 +45,13 @@ export default function RegisterPage(props: { searchParams: SearchParams }) {
     })
   }
 
+  const isAdminRedirect = searchParams.redirectTo?.includes('/admin')
+
+  if (isAdminRedirect) {
+    router.replace('/login?redirectTo=/admin')
+    return null
+  }
+
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center lg:text-left">

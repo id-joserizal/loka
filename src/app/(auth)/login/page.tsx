@@ -40,12 +40,18 @@ export default function LoginPage(props: { searchParams: SearchParams }) {
     })
   }
 
+  const isAdminRedirect = searchParams.redirectTo?.includes('/admin')
+
   return (
     <div className="space-y-6">
       <div className="space-y-2 text-center lg:text-left">
-        <h1 className="text-3xl font-serif font-bold text-zinc-900">Selamat Datang Kembali</h1>
+        <h1 className="text-3xl font-serif font-bold text-zinc-900">
+          {isAdminRedirect ? 'Portal Admin LOKA' : 'Selamat Datang Kembali'}
+        </h1>
         <p className="text-sm text-zinc-500">
-          Masuk ke akun LOKA kamu untuk melanjutkan membaca dan menulis.
+          {isAdminRedirect
+            ? 'Silakan masuk dengan akun administrator LOKA Anda untuk melanjutkan.'
+            : 'Masuk ke akun LOKA kamu untuk melanjutkan membaca dan menulis.'}
         </p>
       </div>
 
@@ -134,12 +140,18 @@ export default function LoginPage(props: { searchParams: SearchParams }) {
         </button>
       </form>
 
-      <p className="text-center text-xs text-zinc-500">
-        Belum punya akun?{' '}
-        <Link href="/register" className="font-semibold text-zinc-900 hover:underline underline-offset-4">
-          Daftar sekarang
-        </Link>
-      </p>
+      {!isAdminRedirect ? (
+        <p className="text-center text-xs text-zinc-500">
+          Belum punya akun?{' '}
+          <Link href="/register" className="font-semibold text-zinc-900 hover:underline underline-offset-4">
+            Daftar sekarang
+          </Link>
+        </p>
+      ) : (
+        <p className="text-center text-xs text-zinc-600 bg-amber-50/80 border border-amber-200/80 p-3 rounded-xl">
+          Portal ini khusus untuk administrator terotentikasi. Tidak ada opsi pendaftaran akun admin mandiri.
+        </p>
+      )}
     </div>
   )
 }
