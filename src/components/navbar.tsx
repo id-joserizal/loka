@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { User } from '@supabase/supabase-js'
 import { signOut } from '@/app/(auth)/actions'
@@ -17,8 +18,18 @@ interface NavbarProps {
 }
 
 export function Navbar({ user, profile }: NavbarProps) {
+  const router = useRouter()
   const [dropdownOpen, setDropdownOpen] = useState(false)
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
+
+  const handleSearch = (e: React.FormEvent) => {
+    e.preventDefault()
+    if (searchQuery.trim()) {
+      router.push(`/search?q=${encodeURIComponent(searchQuery.trim())}`)
+      setMobileMenuOpen(false)
+    }
+  }
 
   const displayName = profile?.full_name || user?.user_metadata?.full_name || user?.email?.split('@')[0] || 'Penulis'
   const username = profile?.username || user?.email?.split('@')[0] || 'user'
@@ -36,14 +47,17 @@ export function Navbar({ user, profile }: NavbarProps) {
           </Link>
 
           {/* Search bar desktop */}
-          <div className="hidden md:flex items-center relative w-64 lg:w-80">
+          <form action="/search" method="GET" onSubmit={handleSearch} className="hidden md:flex items-center relative w-64 lg:w-80">
             <Search className="w-4 h-4 absolute left-3.5 text-zinc-400 pointer-events-none" />
             <input
               type="text"
+              name="q"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari artikel, tag, atau penulis..."
               className="w-full pl-9 pr-4 py-2 rounded-full bg-zinc-100/80 border border-transparent text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none focus:bg-white focus:border-zinc-300 transition"
             />
-          </div>
+          </form>
         </div>
 
         {/* Right side actions */}
@@ -179,14 +193,17 @@ export function Navbar({ user, profile }: NavbarProps) {
       {/* Mobile menu dropdown */}
       {mobileMenuOpen && (
         <div className="sm:hidden border-b border-zinc-200 bg-white p-4 space-y-4">
-          <div className="relative w-full">
+          <form action="/search" method="GET" onSubmit={handleSearch} className="relative w-full">
             <Search className="w-4 h-4 absolute left-3 top-2.5 text-zinc-400" />
             <input
               type="text"
+              name="q"
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
               placeholder="Cari artikel, tag, atau penulis..."
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-100 border border-transparent text-xs text-zinc-800 placeholder-zinc-400"
+              className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-100 border border-transparent text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:bg-white focus:border-zinc-300 transition"
             />
-          </div>
+          </form>
 
           {user ? (
             <div className="space-y-2 pt-2 border-t border-zinc-100">

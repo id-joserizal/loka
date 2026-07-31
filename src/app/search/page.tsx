@@ -30,6 +30,42 @@ export default async function SearchPage(props: SearchPageProps) {
   let articles: any[] = []
 
   if (query) {
+    // 1. Fetch matching authors
+    const { data: profiles } = await supabase
+      .from('profiles')
+      .select('id')
+      .or(`username.ilike.%${query}%,full_name.ilike.%${query}%`)
+
+    const authorIds = profiles ? profiles.map((p) => p.id) : []
+
+    // 2. Fetch matching tags
+    const { data: tags } = await supabase
+      .from('tags')
+      .select('id')
+      .ilike('name', `%${query}%`)
+
+    let articleIdsFromTags: string[] = []
+    if (tags && tags.length > 0) {
+      const tagIds = tags.map((t) => t.id)
+      const { data: articleTags } = await supabase
+        .from('article_tags')
+        .select('article_id')
+        .in('tag_id', tagIds)
+
+      if (articleTags) {
+        articleIdsFromTags = articleTags.map((at) => at.article_id)
+      }
+    }
+
+    // Build main query conditions
+    let orConditions = `title.ilike.%${query}%,excerpt.ilike.%${query}%`
+    if (authorIds.length > 0) {
+      orConditions += `,author_id.in.(${authorIds.join(',')})`
+    }
+    if (articleIdsFromTags.length > 0) {
+      orConditions += `,id.in.(${articleIdsFromTags.join(',')})`
+    }
+
     const { data } = await supabase
       .from('articles')
       .select(`
@@ -55,7 +91,7 @@ export default async function SearchPage(props: SearchPageProps) {
         )
       `)
       .eq('status', 'published')
-      .or(`title.ilike.%${query}%,excerpt.ilike.%${query}%`)
+      .or(orConditions)
       .order('published_at', { ascending: false })
 
     articles = data || []
