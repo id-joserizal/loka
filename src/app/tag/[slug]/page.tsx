@@ -4,8 +4,30 @@ import { Navbar } from '@/components/navbar'
 import { ArticleCard } from '@/components/article/article-card'
 import { Tag } from 'lucide-react'
 
+import type { Metadata } from 'next'
+
 interface TagPageProps {
   params: Promise<{ slug: string }>
+}
+
+export async function generateMetadata(props: TagPageProps): Promise<Metadata> {
+  const { slug } = await props.params
+  const supabase = await createClient()
+
+  const { data: tag } = await supabase
+    .from('tags')
+    .select('name')
+    .eq('slug', slug)
+    .single()
+
+  if (!tag) {
+    return { title: 'Topik Tidak Ditemukan' }
+  }
+
+  return {
+    title: `#${tag.name}`,
+    description: `Kumpulan artikel tentang #${tag.name} di LOKA.`,
+  }
 }
 
 export default async function TagPage(props: TagPageProps) {

@@ -6,7 +6,7 @@ import { Navbar } from '@/components/navbar'
 import { SettingsClient } from './settings-client'
 
 export const metadata: Metadata = {
-  title: 'Pengaturan Akun | LOKA',
+  title: 'Pengaturan Akun',
   description: 'Edit profil, username, bio, dan foto avatar akun LOKA kamu.',
 }
 

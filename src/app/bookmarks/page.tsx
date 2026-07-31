@@ -7,7 +7,7 @@ import { ArticleCard } from '@/components/article/article-card'
 import { Bookmark, BookOpen } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Bookmark Saya | LOKA',
+  title: 'Bookmark Saya',
   description: 'Daftar artikel yang kamu simpan di LOKA.',
 }
 

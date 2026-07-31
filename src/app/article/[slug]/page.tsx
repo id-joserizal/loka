@@ -30,14 +30,14 @@ export async function generateMetadata(props: ArticlePageProps): Promise<Metadat
 
   if (!article) {
     return {
-      title: 'Artikel Tidak Ditemukan — LOKA',
+      title: 'Artikel Tidak Ditemukan',
     }
   }
 
   const authorName = (article.profiles as any)?.full_name || 'Penulis LOKA'
 
   return {
-    title: `${article.title} — ${authorName} | LOKA`,
+    title: `${article.title} — ${authorName}`,
     description: article.excerpt || `Baca artikel "${article.title}" oleh ${authorName} di LOKA.`,
     openGraph: {
       title: article.title,

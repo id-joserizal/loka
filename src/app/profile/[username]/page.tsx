@@ -24,11 +24,20 @@ export async function generateMetadata(props: ProfilePageProps): Promise<Metadat
     .single()
 
   if (!profile) {
-    return { title: 'Profil Tidak Ditemukan — LOKA' }
+    return { title: 'Profil Tidak Ditemukan' }
   }
 
+  const hasName = Boolean(profile.full_name)
+  const isNameSameAsUser = hasName && profile.full_name.trim().toLowerCase() === username.trim().toLowerCase()
+  
+  const titleText = !hasName 
+    ? `@${username}` 
+    : isNameSameAsUser 
+      ? profile.full_name 
+      : `${profile.full_name} (@${username})`
+
   return {
-    title: `${profile.full_name || username} (@${username}) | LOKA`,
+    title: titleText,
     description: profile.bio || `Baca artikel dari ${profile.full_name || username} di LOKA.`,
     openGraph: {
       title: `${profile.full_name || username} di LOKA`,

@@ -7,7 +7,7 @@ import { DashboardClient, type DashboardArticle } from './dashboard-client'
 import { SquarePen } from 'lucide-react'
 
 export const metadata: Metadata = {
-  title: 'Dashboard Penulis | LOKA',
+  title: 'Dashboard Penulis',
   description: 'Kelola artikel, lihat statistik, dan kelola kontenmu di LOKA.',
 }
 
