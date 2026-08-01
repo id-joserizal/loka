@@ -14,6 +14,7 @@ import { CommentsSection } from '@/components/social/comments-section'
 import { ArticleReportButton } from '@/components/article/article-report-button'
 import { BadgeIcon } from '@/components/ui/badge-icon'
 import { ArticleViewTracker } from '@/components/article/article-view-tracker'
+import { Eye } from 'lucide-react'
 
 interface ArticlePageProps {
   params: Promise<{ slug: string }>
@@ -146,6 +147,18 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
     isBookmarked = !!bm
   }
 
+  // Fetch page view count (graceful fallback if table not yet created)
+  let totalViews = 0
+  try {
+    const { count } = await supabase
+      .from('page_views')
+      .select('*', { count: 'exact', head: true })
+      .eq('article_id', article.id)
+    totalViews = count || 0
+  } catch {
+    // table may not exist yet
+  }
+
   // Fetch comments
   const { data: comments } = await supabase
     .from('comments')
@@ -233,8 +246,15 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
                   <FollowButton followingId={author.id} initialIsFollowing={isFollowing} />
                 )}
               </div>
-              <p className="text-sm text-zinc-600 mt-0.5">
-                {article.reading_time || 1} min baca • {formattedDate}
+              <p className="text-sm text-zinc-600 mt-0.5 flex items-center gap-1.5 flex-wrap">
+                <span>{article.reading_time || 1} min baca</span>
+                <span>•</span>
+                <span>{formattedDate}</span>
+                <span>•</span>
+                <span className="inline-flex items-center gap-1">
+                  <Eye className="w-3.5 h-3.5" />
+                  {totalViews.toLocaleString('id-ID')} pembaca
+                </span>
               </p>
             </div>
           </div>
@@ -282,12 +302,17 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
 
         {/* Interactive Social Stats Bar */}
         <div className="flex items-center justify-between border-y border-zinc-200 py-4 my-8">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-4">
             <ClapButton
               articleId={article.id}
               initialTotalClaps={totalClaps}
               initialUserClaps={userClapCount}
             />
+            <div className="flex items-center gap-1.5 text-sm text-zinc-500">
+              <Eye className="w-4 h-4" />
+              <span className="font-medium text-zinc-700">{totalViews.toLocaleString('id-ID')}</span>
+              <span>pembaca</span>
+            </div>
           </div>
 
           <div className="flex items-center gap-2">
