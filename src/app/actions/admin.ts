@@ -50,6 +50,8 @@ async function getAdminSupabaseClient() {
 export async function getAdminStats() {
   const { supabase } = await getAdminSupabaseClient()
 
+  const oneWeekAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+
   const [
     { count: totalUsers },
     { count: totalArticles },
@@ -58,6 +60,8 @@ export async function getAdminStats() {
     { count: totalComments },
     { count: totalClaps },
     { count: pendingReports },
+    { count: newUsersThisWeek },
+    { count: newArticlesThisWeek },
   ] = await Promise.all([
     supabase.from('profiles').select('*', { count: 'exact', head: true }),
     supabase.from('articles').select('*', { count: 'exact', head: true }),
@@ -66,7 +70,85 @@ export async function getAdminStats() {
     supabase.from('comments').select('*', { count: 'exact', head: true }),
     supabase.from('claps').select('*', { count: 'exact', head: true }),
     supabase.from('reports').select('*', { count: 'exact', head: true }).eq('status', 'pending'),
+    supabase.from('profiles').select('*', { count: 'exact', head: true }).gte('created_at', oneWeekAgo),
+    supabase.from('articles').select('*', { count: 'exact', head: true }).eq('status', 'published').gte('published_at', oneWeekAgo),
   ])
+
+  // Try fetching page views stats (fallback gracefully if table page_views does not exist yet)
+  let totalPageViews = 0
+  let viewsThisWeek = 0
+  let topArticles: Array<{
+    id: string
+    title: string
+    slug: string
+    views: number
+    authorName: string
+    coverUrl?: string | null
+  }> = []
+
+  try {
+    const [{ count: pageViewsCount }, { count: weekViewsCount }] = await Promise.all([
+      supabase.from('page_views').select('*', { count: 'exact', head: true }),
+      supabase.from('page_views').select('*', { count: 'exact', head: true }).gte('visited_at', oneWeekAgo),
+    ])
+    totalPageViews = pageViewsCount || 0
+    viewsThisWeek = weekViewsCount || 0
+
+    // Fetch top 5 articles with most page views
+    const { data: viewsData } = await supabase
+      .from('page_views')
+      .select('article_id')
+      .not('article_id', 'is', null)
+
+    if (viewsData && viewsData.length > 0) {
+      // Aggregate view counts per article_id
+      const countsMap: Record<string, number> = {}
+      for (const row of viewsData) {
+        if (row.article_id) {
+          countsMap[row.article_id] = (countsMap[row.article_id] || 0) + 1
+        }
+      }
+
+      // Sort article IDs by views count descending
+      const sortedArticleIds = Object.keys(countsMap)
+        .sort((a, b) => countsMap[b] - countsMap[a])
+        .slice(0, 5)
+
+      if (sortedArticleIds.length > 0) {
+        const { data: topArticlesData } = await supabase
+          .from('articles')
+          .select(`
+            id,
+            title,
+            slug,
+            cover_image_url,
+            profiles:author_id (
+              full_name,
+              username
+            )
+          `)
+          .in('id', sortedArticleIds)
+
+        if (topArticlesData) {
+          topArticles = topArticlesData
+            .map((art: any) => {
+              const prof = Array.isArray(art.profiles) ? art.profiles[0] : art.profiles
+              return {
+                id: art.id,
+                title: art.title,
+                slug: art.slug,
+                views: countsMap[art.id] || 0,
+                authorName: prof?.full_name || prof?.username || 'Penulis',
+                coverUrl: art.cover_image_url || null,
+              }
+            })
+            .sort((a, b) => b.views - a.views)
+        }
+      }
+    }
+  } catch (err) {
+    console.warn('page_views query failed or table not yet created:', err)
+  }
 
   return {
     totalUsers: totalUsers || 0,
@@ -76,6 +158,11 @@ export async function getAdminStats() {
     totalComments: totalComments || 0,
     totalClaps: totalClaps || 0,
     pendingReports: pendingReports || 0,
+    newUsersThisWeek: newUsersThisWeek || 0,
+    newArticlesThisWeek: newArticlesThisWeek || 0,
+    totalPageViews,
+    viewsThisWeek,
+    topArticles,
   }
 }
 

@@ -13,6 +13,7 @@ import { ShareButton } from '@/components/social/share-button'
 import { CommentsSection } from '@/components/social/comments-section'
 import { ArticleReportButton } from '@/components/article/article-report-button'
 import { BadgeIcon } from '@/components/ui/badge-icon'
+import { ArticleViewTracker } from '@/components/article/article-view-tracker'
 
 interface ArticlePageProps {
   params: Promise<{ slug: string }>
@@ -192,6 +193,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
 
   return (
     <div className="min-h-screen bg-[#F4EFEA] text-zinc-900 flex flex-col">
+      <ArticleViewTracker articleId={article.id} userId={user?.id ?? null} />
       <ReadingProgressBar />
       <Navbar user={user} profile={currentProfile} />
 
