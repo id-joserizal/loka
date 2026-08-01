@@ -9,6 +9,8 @@ import { FollowButton } from '@/components/social/follow-button'
 import { Users, FileText, BookOpen } from 'lucide-react'
 import { BadgeIcon } from '@/components/ui/badge-icon'
 
+import { ProfileShareButton } from '@/components/social/profile-share-button'
+
 interface ProfilePageProps {
   params: Promise<{ username: string }>
 }
@@ -36,13 +38,21 @@ export async function generateMetadata(props: ProfilePageProps): Promise<Metadat
       ? profile.full_name 
       : `${profile.full_name} (@${username})`
 
+  const images = profile.avatar_url ? [{ url: profile.avatar_url, alt: titleText }] : []
+
   return {
     title: titleText,
     description: profile.bio || `Baca artikel dari ${profile.full_name || username} di LOKA.`,
     openGraph: {
       title: `${profile.full_name || username} di LOKA`,
       description: profile.bio || `Penulis di platform LOKA`,
-      images: profile.avatar_url ? [{ url: profile.avatar_url }] : [],
+      images: images,
+    },
+    twitter: {
+      card: 'summary',
+      title: `${profile.full_name || username} di LOKA`,
+      description: profile.bio || `Penulis di platform LOKA`,
+      images: profile.avatar_url ? [profile.avatar_url] : [],
     },
   }
 }
@@ -177,6 +187,17 @@ export default async function ProfilePage(props: ProfilePageProps) {
                   Edit Profil
                 </Link>
               )}
+              <ProfileShareButton
+                profile={{
+                  username: profile.username,
+                  full_name: profile.full_name,
+                  bio: profile.bio,
+                  avatar_url: profile.avatar_url,
+                  badge: (profile as any).badge,
+                  articlesCount: articles?.length ?? 0,
+                  followersCount: followerCount ?? 0,
+                }}
+              />
             </div>
             <p className="text-sm text-zinc-500">@{profile.username}</p>
 

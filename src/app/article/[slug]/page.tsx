@@ -238,7 +238,12 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <ShareButton title={article.title} />
+            <ShareButton
+              title={article.title}
+              coverImageUrl={article.cover_image_url}
+              authorName={authorName}
+              excerpt={article.excerpt}
+            />
             <BookmarkButton articleId={article.id} initialIsBookmarked={isBookmarked} />
             {user && <ArticleReportButton articleId={article.id} articleTitle={article.title} />}
           </div>
@@ -284,7 +289,12 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
           </div>
 
           <div className="flex items-center gap-2">
-            <ShareButton title={article.title} />
+            <ShareButton
+              title={article.title}
+              coverImageUrl={article.cover_image_url}
+              authorName={authorName}
+              excerpt={article.excerpt}
+            />
             <BookmarkButton articleId={article.id} initialIsBookmarked={isBookmarked} />
           </div>
         </div>
