@@ -26,7 +26,7 @@ export async function generateMetadata(props: ArticlePageProps): Promise<Metadat
 
   const { data: article } = await supabase
     .from('articles')
-    .select('title, excerpt, cover_image_url, profiles(full_name)')
+    .select('title, excerpt, cover_image_url, profiles:author_id(full_name)')
     .eq('slug', slug)
     .single()
 
