@@ -50,7 +50,7 @@ export default async function DashboardPage() {
         <Navbar user={user} profile={profile} />
         <main className="flex-1 max-w-5xl w-full mx-auto px-4 py-10 sm:py-16">
           <DashboardHeader profile={profile} />
-          <DashboardClient articles={[]} totalClaps={0} totalComments={0} />
+          <DashboardClient articles={[]} totalVotes={0} totalComments={0} />
         </main>
       </div>
     )
@@ -58,16 +58,16 @@ export default async function DashboardPage() {
 
   const articleIds = rawArticles.map((a) => a.id)
 
-  // Fetch clap totals per article
-  const { data: clapsData } = await supabase
-    .from('claps')
-    .select('article_id, count')
+  // Fetch votes totals per article
+  const { data: votesData } = await supabase
+    .from('votes')
+    .select('article_id, vote_type')
     .in('article_id', articleIds)
 
-  // Aggregate clap counts per article
-  const clapsByArticle: Record<string, number> = {}
-  clapsData?.forEach((c) => {
-    clapsByArticle[c.article_id] = (clapsByArticle[c.article_id] || 0) + c.count
+  // Aggregate net votes per article
+  const votesByArticle: Record<string, number> = {}
+  votesData?.forEach((v) => {
+    votesByArticle[v.article_id] = (votesByArticle[v.article_id] || 0) + v.vote_type
   })
 
   // Fetch comment counts per article
@@ -90,11 +90,11 @@ export default async function DashboardPage() {
     published_at: a.published_at,
     created_at: a.created_at,
     reading_time: a.reading_time,
-    clap_count: clapsByArticle[a.id] || 0,
+    vote_score: votesByArticle[a.id] || 0,
     comment_count: commentsByArticle[a.id] || 0,
   }))
 
-  const totalClaps = Object.values(clapsByArticle).reduce((a, b) => a + b, 0)
+  const totalVotes = Object.values(votesByArticle).reduce((a, b) => a + b, 0)
   const totalComments = Object.values(commentsByArticle).reduce((a, b) => a + b, 0)
 
   return (
@@ -105,7 +105,7 @@ export default async function DashboardPage() {
         <DashboardHeader profile={profile} />
         <DashboardClient
           articles={articles}
-          totalClaps={totalClaps}
+          totalVotes={totalVotes}
           totalComments={totalComments}
         />
       </main>

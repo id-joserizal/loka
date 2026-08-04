@@ -1,5 +1,5 @@
 import Link from 'next/link'
-import { Bookmark } from 'lucide-react'
+import { Bookmark, ArrowBigUp } from 'lucide-react'
 import { BadgeIcon } from '@/components/ui/badge-icon'
 
 export interface ArticleCardProps {
@@ -24,6 +24,7 @@ export interface ArticleCardProps {
       } | null
     }>
     claps_count?: number
+    net_votes?: number
   }
 }
 
@@ -101,6 +102,12 @@ export function ArticleCard({ article }: ArticleCardProps) {
             <span className="text-xs text-zinc-400">
               {article.reading_time || 1} min baca
             </span>
+            {article.net_votes !== undefined && (
+              <span className="flex items-center gap-1 text-xs font-semibold text-zinc-700 bg-zinc-100 px-2 py-0.5 rounded-full">
+                <ArrowBigUp className="w-3.5 h-3.5 fill-zinc-700 text-zinc-700" />
+                <span>{article.net_votes > 0 ? `+${article.net_votes}` : article.net_votes}</span>
+              </span>
+            )}
           </div>
 
           <button

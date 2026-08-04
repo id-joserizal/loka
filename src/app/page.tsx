@@ -2,6 +2,7 @@ import Link from 'next/link'
 import { createClient } from '@/lib/supabase/server'
 import { Navbar } from '@/components/navbar'
 import { ArticleCard } from '@/components/article/article-card'
+import { TrendingBar } from '@/components/article/trending-bar'
 import { ArrowRight, PenTool, Sparkles, Compass, TrendingUp, Users } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
@@ -9,6 +10,72 @@ export const revalidate = 0
 
 interface HomePageProps {
   searchParams: Promise<{ tab?: string }>
+}
+
+async function fetchArticlesWithStats(supabase: any, rawArticles: any[]) {
+  if (!rawArticles || rawArticles.length === 0) return []
+
+  const articleIds = rawArticles.map((a) => a.id)
+
+  // Fetch votes
+  const { data: votesData } = await supabase
+    .from('votes')
+    .select('article_id, vote_type')
+    .in('article_id', articleIds)
+
+  const votesMap: Record<string, number> = {}
+  votesData?.forEach((v: any) => {
+    votesMap[v.article_id] = (votesMap[v.article_id] || 0) + v.vote_type
+  })
+
+  // Fetch comments count
+  const { data: commentsData } = await supabase
+    .from('comments')
+    .select('article_id')
+    .in('article_id', articleIds)
+
+  const commentsMap: Record<string, number> = {}
+  commentsData?.forEach((c: any) => {
+    commentsMap[c.article_id] = (commentsMap[c.article_id] || 0) + 1
+  })
+
+  // Fetch views count
+  let viewsMap: Record<string, number> = {}
+  try {
+    const { data: viewsData } = await supabase
+      .from('page_views')
+      .select('article_id')
+      .in('article_id', articleIds)
+
+    viewsData?.forEach((v: any) => {
+      viewsMap[v.article_id] = (viewsMap[v.article_id] || 0) + 1
+    })
+  } catch {}
+
+  const now = Date.now()
+
+  return rawArticles.map((a) => {
+    const netVotes = votesMap[a.id] || 0
+    const commentCount = commentsMap[a.id] || 0
+    const viewCount = viewsMap[a.id] || 0
+
+    const pubTime = a.published_at ? new Date(a.published_at).getTime() : new Date(a.created_at).getTime()
+    const hoursSincePublished = Math.max(0, (now - pubTime) / (1000 * 60 * 60))
+
+    // Dynamic Gravity Trending Score:
+    // Score = ((NetVotes * 3) + (CommentCount * 2) + (ViewCount * 0.2) + 1) / (HoursOld + 2)^1.5
+    const trendingScore =
+      ((netVotes * 3) + (commentCount * 2) + (viewCount * 0.2) + 1) /
+      Math.pow(hoursSincePublished + 2, 1.5)
+
+    return {
+      ...a,
+      net_votes: netVotes,
+      comment_count: commentCount,
+      view_count: viewCount,
+      trending_score: trendingScore,
+    }
+  })
 }
 
 export default async function HomePage(props: HomePageProps) {
@@ -30,11 +97,46 @@ export default async function HomePage(props: HomePageProps) {
     profile = data
   }
 
-  // Fetch articles based on selected tab
+  // 1. Fetch raw published articles for computing Trending Bar top stories
+  const { data: rawAllPublished } = await supabase
+    .from('articles')
+    .select(`
+      id,
+      title,
+      slug,
+      excerpt,
+      cover_image_url,
+      reading_time,
+      published_at,
+      created_at,
+      status,
+      profiles:author_id (
+        username,
+        full_name,
+        avatar_url,
+        badge
+      ),
+      article_tags (
+        tags (
+          name,
+          slug
+        )
+      )
+    `)
+    .eq('status', 'published')
+    .limit(50)
+
+  const allPublishedWithStats = await fetchArticlesWithStats(supabase, rawAllPublished || [])
+
+  // Sort by trending score for TrendingBar top section
+  const trendingBarArticles = [...allPublishedWithStats].sort(
+    (a, b) => b.trending_score - a.trending_score
+  )
+
+  // 2. Fetch feed articles based on selected tab
   let articles: any[] = []
 
   if (tab === 'following' && user) {
-    // Articles from authors the user follows
     const { data: followedIds } = await supabase
       .from('follows')
       .select('following_id')
@@ -42,7 +144,7 @@ export default async function HomePage(props: HomePageProps) {
 
     if (followedIds && followedIds.length > 0) {
       const ids = followedIds.map((f) => f.following_id)
-      const { data, error } = await supabase
+      const { data } = await supabase
         .from('articles')
         .select(`
           id,
@@ -73,49 +175,14 @@ export default async function HomePage(props: HomePageProps) {
         .order('created_at', { ascending: false })
         .limit(20)
 
-      if (error) {
-        console.error('Error fetching following articles:', error)
-      }
-      articles = data ?? []
+      articles = await fetchArticlesWithStats(supabase, data || [])
     }
   } else if (tab === 'trending') {
-    const { data, error } = await supabase
-      .from('articles')
-      .select(`
-        id,
-        title,
-        slug,
-        excerpt,
-        cover_image_url,
-        reading_time,
-        published_at,
-        created_at,
-        status,
-        profiles:author_id (
-          username,
-          full_name,
-          avatar_url,
-          badge
-        ),
-        article_tags (
-          tags (
-            name,
-            slug
-          )
-        )
-      `)
-      .eq('status', 'published')
-      .order('published_at', { ascending: false, nullsFirst: false })
-      .order('created_at', { ascending: false })
-      .limit(20)
-
-    if (error) {
-      console.error('Error fetching trending articles:', error)
-    }
-    articles = data ?? []
+    // Return feed articles sorted strictly by dynamic trending algorithm score
+    articles = [...allPublishedWithStats].sort((a, b) => b.trending_score - a.trending_score)
   } else {
     // Latest (default)
-    const { data, error } = await supabase
+    const { data } = await supabase
       .from('articles')
       .select(`
         id,
@@ -145,10 +212,7 @@ export default async function HomePage(props: HomePageProps) {
       .order('created_at', { ascending: false })
       .limit(20)
 
-    if (error) {
-      console.error('Error fetching latest articles:', error)
-    }
-    articles = data ?? []
+    articles = await fetchArticlesWithStats(supabase, data || [])
   }
 
   // Fetch popular tags
@@ -188,6 +252,11 @@ export default async function HomePage(props: HomePageProps) {
 
       {/* Main Feed Content Area */}
       <main className="flex-1 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-10 w-full">
+        {/* Trending Article Bar at the Top of Home Feed */}
+        {trendingBarArticles && trendingBarArticles.length > 0 && (
+          <TrendingBar articles={trendingBarArticles} />
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Left / Main Articles Feed */}
           <div className="lg:col-span-8 space-y-6">

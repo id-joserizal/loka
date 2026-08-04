@@ -13,7 +13,7 @@ import {
   FileText,
   Globe,
   Clock,
-  ThumbsUp,
+  ArrowBigUp,
   MessageCircle,
   MoreVertical,
   AlertTriangle,
@@ -27,7 +27,7 @@ export interface DashboardArticle {
   published_at: string | null
   created_at: string
   reading_time: number | null
-  clap_count: number
+  vote_score: number
   comment_count: number
 }
 
@@ -214,8 +214,8 @@ function ArticleRow({ article, onDeleted, onStatusToggled }: ArticleRowProps) {
           {/* Stats */}
           <div className="flex items-center gap-4 text-[11px] text-zinc-500">
             <span className="flex items-center gap-1">
-              <ThumbsUp className="w-3 h-3" />
-              {article.clap_count} clap
+              <ArrowBigUp className="w-3.5 h-3.5 fill-zinc-500 text-zinc-500" />
+              {article.vote_score > 0 ? `+${article.vote_score}` : article.vote_score} vote
             </span>
             <span className="flex items-center gap-1">
               <MessageCircle className="w-3 h-3" />
@@ -238,11 +238,11 @@ function ArticleRow({ article, onDeleted, onStatusToggled }: ArticleRowProps) {
 
 interface DashboardClientProps {
   articles: DashboardArticle[]
-  totalClaps: number
+  totalVotes: number
   totalComments: number
 }
 
-export function DashboardClient({ articles: initialArticles, totalClaps, totalComments }: DashboardClientProps) {
+export function DashboardClient({ articles: initialArticles, totalVotes, totalComments }: DashboardClientProps) {
   const [articles, setArticles] = useState<DashboardArticle[]>(initialArticles)
   const [activeTab, setActiveTab] = useState<'all' | 'published' | 'draft'>('all')
 
@@ -289,10 +289,10 @@ export function DashboardClient({ articles: initialArticles, totalClaps, totalCo
         </div>
         <div className="p-5 rounded-2xl bg-white border border-zinc-200 space-y-1">
           <div className="flex items-center gap-2 text-zinc-500 text-xs">
-            <ThumbsUp className="w-3.5 h-3.5" />
-            <span>Total Clap</span>
+            <ArrowBigUp className="w-3.5 h-3.5 text-emerald-600 fill-emerald-600" />
+            <span>Total Net Vote</span>
           </div>
-          <p className="text-3xl font-serif font-bold text-zinc-900">{totalClaps}</p>
+          <p className="text-3xl font-serif font-bold text-zinc-900">{totalVotes > 0 ? `+${totalVotes}` : totalVotes}</p>
         </div>
         <div className="p-5 rounded-2xl bg-white border border-zinc-200 space-y-1">
           <div className="flex items-center gap-2 text-zinc-500 text-xs">

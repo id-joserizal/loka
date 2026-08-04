@@ -170,6 +170,61 @@ export interface Database {
           following_id?: string
         }
       }
+      votes: {
+        Row: {
+          id: string
+          article_id: string
+          user_id: string
+          vote_type: number
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          article_id: string
+          user_id: string
+          vote_type: number
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          article_id?: string
+          user_id?: string
+          vote_type?: number
+          created_at?: string
+        }
+      }
+      notifications: {
+        Row: {
+          id: string
+          user_id: string
+          actor_id: string
+          type: 'upvote' | 'downvote' | 'comment' | 'reply' | 'follow'
+          article_id: string | null
+          comment_id: string | null
+          read: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          user_id: string
+          actor_id: string
+          type: 'upvote' | 'downvote' | 'comment' | 'reply' | 'follow'
+          article_id?: string | null
+          comment_id?: string | null
+          read?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          user_id?: string
+          actor_id?: string
+          type?: 'upvote' | 'downvote' | 'comment' | 'reply' | 'follow'
+          article_id?: string | null
+          comment_id?: string | null
+          read?: boolean
+          created_at?: string
+        }
+      }
       bookmarks: {
         Row: {
           user_id: string

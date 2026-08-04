@@ -5,7 +5,8 @@ import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import { User } from '@supabase/supabase-js'
 import { signOut } from '@/app/(auth)/actions'
-import { SquarePen, LayoutDashboard, Settings, LogOut, User as UserIcon, Search, Menu, X, Bookmark, ShieldAlert } from 'lucide-react'
+import { SquarePen, LayoutDashboard, Settings, LogOut, User as UserIcon, Search, Menu, X, Bookmark, ShieldAlert, Bell } from 'lucide-react'
+import { NotificationBell } from '@/components/notifications/notification-bell'
 
 interface NavbarProps {
   user: User | null
@@ -72,6 +73,8 @@ export function Navbar({ user, profile }: NavbarProps) {
                 <span>Tulis</span>
               </Link>
 
+              <NotificationBell />
+
               {/* User Dropdown */}
               <div className="relative">
                 <button
@@ -113,6 +116,15 @@ export function Navbar({ user, profile }: NavbarProps) {
                         >
                           <Bookmark className="w-4 h-4 text-zinc-400" />
                           <span>Bookmark Saya</span>
+                        </Link>
+
+                        <Link
+                          href="/notifications"
+                          onClick={() => setDropdownOpen(false)}
+                          className="flex items-center gap-3 px-3.5 py-2.5 text-sm text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
+                        >
+                          <Bell className="w-4 h-4 text-zinc-400" />
+                          <span>Notifikasi</span>
                         </Link>
 
                         {profile?.role === 'admin' && (

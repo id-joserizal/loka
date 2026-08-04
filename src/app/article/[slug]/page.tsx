@@ -6,7 +6,7 @@ import { Navbar } from '@/components/navbar'
 import { ReadingProgressBar } from '@/components/article/reading-progress-bar'
 import { TiptapRenderer } from '@/components/article/tiptap-renderer'
 import { ArticleCard } from '@/components/article/article-card'
-import { ClapButton } from '@/components/social/clap-button'
+import { VoteButton } from '@/components/social/vote-button'
 import { BookmarkButton } from '@/components/social/bookmark-button'
 import { FollowButton } from '@/components/social/follow-button'
 import { ShareButton } from '@/components/social/share-button'
@@ -113,15 +113,26 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
     ? article.article_tags.map((at: any) => at.tags).filter(Boolean)
     : []
 
-  // Fetch claps data
-  const { data: clapsData } = await supabase
-    .from('claps')
-    .select('count, user_id')
-    .eq('article_id', article.id)
+  // Fetch votes data
+  let totalNetVotes = 0
+  let userVoteType = 0
 
-  const totalClaps = clapsData ? clapsData.reduce((acc, c) => acc + c.count, 0) : 0
-  const userClapObj = user && clapsData ? clapsData.find((c) => c.user_id === user.id) : null
-  const userClapCount = userClapObj ? userClapObj.count : 0
+  try {
+    const { data: votesData } = await supabase
+      .from('votes')
+      .select('vote_type, user_id')
+      .eq('article_id', article.id)
+
+    if (votesData) {
+      totalNetVotes = votesData.reduce((acc, v) => acc + v.vote_type, 0)
+      if (user) {
+        const found = votesData.find((v) => v.user_id === user.id)
+        if (found) userVoteType = found.vote_type
+      }
+    }
+  } catch (err) {
+    console.error('Error fetching votes data:', err)
+  }
 
   // Fetch follow status
   let isFollowing = false
@@ -303,10 +314,10 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
         {/* Interactive Social Stats Bar */}
         <div className="flex items-center justify-between border-y border-zinc-200 py-4 my-8">
           <div className="flex items-center gap-4">
-            <ClapButton
+            <VoteButton
               articleId={article.id}
-              initialTotalClaps={totalClaps}
-              initialUserClaps={userClapCount}
+              initialNetVotes={totalNetVotes}
+              initialUserVote={userVoteType}
             />
             <div className="flex items-center gap-1.5 text-sm text-zinc-500">
               <Eye className="w-4 h-4" />
