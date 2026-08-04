@@ -17,7 +17,7 @@ async function fetchArticlesWithStats(supabase: any, rawArticles: any[]) {
 
   const articleIds = rawArticles.map((a) => a.id)
 
-  // Fetch votes
+  // Fetch votes (upvote = +1, downvote = -1)
   const { data: votesData } = await supabase
     .from('votes')
     .select('article_id, vote_type')
@@ -52,21 +52,13 @@ async function fetchArticlesWithStats(supabase: any, rawArticles: any[]) {
     })
   } catch {}
 
-  const now = Date.now()
-
   return rawArticles.map((a) => {
-    const netVotes = votesMap[a.id] || 0
+    const netVotes = votesMap[a.id] || 0       // Upvote - Downvote
     const commentCount = commentsMap[a.id] || 0
     const viewCount = viewsMap[a.id] || 0
 
-    const pubTime = a.published_at ? new Date(a.published_at).getTime() : new Date(a.created_at).getTime()
-    const hoursSincePublished = Math.max(0, (now - pubTime) / (1000 * 60 * 60))
-
-    // Dynamic Gravity Trending Score:
-    // Score = ((NetVotes * 3) + (CommentCount * 2) + (ViewCount * 0.2) + 1) / (HoursOld + 2)^1.5
-    const trendingScore =
-      ((netVotes * 3) + (commentCount * 2) + (viewCount * 0.2) + 1) /
-      Math.pow(hoursSincePublished + 2, 1.5)
+    // Trending Score = (Upvote - Downvote) + Views + Komentar
+    const trendingScore = netVotes + viewCount + commentCount
 
     return {
       ...a,

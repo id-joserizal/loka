@@ -187,7 +187,8 @@ CREATE TRIGGER on_follow_created
 
 
 -- ============================================================
--- 4. FUNCTION: Algoritma Artikel Trending Dinamis
+-- 4. FUNCTION: Algoritma Artikel Trending
+-- Trending Score = (Upvote - Downvote) + Views + Komentar
 -- ============================================================
 CREATE OR REPLACE FUNCTION public.get_trending_articles(p_limit INTEGER DEFAULT 20)
 RETURNS TABLE (
@@ -220,14 +221,11 @@ BEGIN
     a.created_at,
     a.status,
     CAST(
-      (
-        (COALESCE(v.upvotes, 0) - COALESCE(v.downvotes, 0)) * 3 + 
-        COALESCE(c.comment_count, 0) * 2 + 
-        COALESCE(pv.view_count, 0) * 0.2 + 1
-      ) / POWER(
-        GREATEST(EXTRACT(EPOCH FROM (NOW() - COALESCE(a.published_at, a.created_at))) / 3600.0, 0) + 2, 
-        1.5
-      ) AS NUMERIC
+      -- Trending Score = (Upvote - Downvote) + Views + Komentar
+      (COALESCE(v.upvotes, 0) - COALESCE(v.downvotes, 0))
+      + COALESCE(pv.view_count, 0)
+      + COALESCE(c.comment_count, 0)
+      AS NUMERIC
     ) AS trending_score
   FROM public.articles a
   LEFT JOIN (
