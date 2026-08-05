@@ -42,12 +42,12 @@ export function Navbar({ user, profile }: NavbarProps) {
 
   return (
     <>
-      <header className="sticky top-0 z-50 w-full border-b border-zinc-200/80 bg-[#F4EFEA]/90 backdrop-blur-md">
+      <header className="sticky top-0 z-50 w-full border-b border-zinc-800/90 bg-zinc-900/95 backdrop-blur-md text-white">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between gap-4">
           {/* Brand & Search */}
           <div className="flex items-center gap-6">
             <Link href="/" className="flex items-center gap-2 group">
-              <span className="text-3xl font-serif font-black tracking-tight text-zinc-900 group-hover:text-zinc-700 transition">
+              <span className="text-3xl font-serif font-black tracking-tight text-white group-hover:text-zinc-300 transition">
                 LOKA
               </span>
             </Link>
@@ -61,7 +61,7 @@ export function Navbar({ user, profile }: NavbarProps) {
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Cari artikel, tag, atau penulis..."
-                className="w-full pl-9 pr-4 py-2 rounded-full bg-zinc-100/80 border border-transparent text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none focus:bg-white focus:border-zinc-300 transition"
+                className="w-full pl-9 pr-4 py-2 rounded-full bg-zinc-800/80 border border-zinc-700/60 text-sm text-white placeholder-zinc-400 focus:outline-none focus:bg-zinc-800 focus:border-zinc-500 transition"
               />
             </form>
           </div>
@@ -72,7 +72,7 @@ export function Navbar({ user, profile }: NavbarProps) {
               <>
                 <Link
                   href="/write"
-                  className="flex items-center gap-2 text-sm sm:text-base font-medium text-zinc-600 hover:text-zinc-900 transition"
+                  className="flex items-center gap-2 text-sm sm:text-base font-medium text-zinc-300 hover:text-white transition"
                 >
                   <SquarePen className="w-5 h-5" />
                   <span>Tulis</span>
@@ -84,12 +84,12 @@ export function Navbar({ user, profile }: NavbarProps) {
                 <div className="relative">
                   <button
                     onClick={() => setDropdownOpen(!dropdownOpen)}
-                    className="flex items-center gap-2 p-0.5 rounded-full hover:ring-2 hover:ring-zinc-300 transition relative"
+                    className="flex items-center gap-2 p-0.5 rounded-full hover:ring-2 hover:ring-zinc-600 transition relative"
                   >
                     {avatarUrl ? (
-                      <img src={avatarUrl} alt={displayName} className="w-9 h-9 rounded-full object-cover border border-zinc-200" />
+                      <img src={avatarUrl} alt={displayName} className="w-9 h-9 rounded-full object-cover border border-zinc-700" />
                     ) : (
-                      <div className="w-9 h-9 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-sm">
+                      <div className="w-9 h-9 rounded-full bg-zinc-800 text-white border border-zinc-700 flex items-center justify-center font-bold text-sm">
                         {displayName.charAt(0).toUpperCase()}
                       </div>
                     )}
@@ -190,13 +190,13 @@ export function Navbar({ user, profile }: NavbarProps) {
               <div className="flex items-center gap-4">
                 <Link
                   href="/login"
-                  className="px-3 py-2 text-sm sm:text-base font-medium text-zinc-600 hover:text-zinc-900 transition"
+                  className="px-3 py-2 text-sm sm:text-base font-medium text-zinc-300 hover:text-white transition"
                 >
                   Masuk
                 </Link>
                 <Link
                   href="/register"
-                  className="px-5 py-2.5 rounded-full bg-zinc-900 hover:bg-black text-sm font-medium text-white shadow-sm transition duration-150"
+                  className="px-5 py-2.5 rounded-full bg-white hover:bg-zinc-100 text-sm font-medium text-zinc-900 shadow-sm transition duration-150"
                 >
                   Mulai Menulis
                 </Link>
@@ -209,17 +209,17 @@ export function Navbar({ user, profile }: NavbarProps) {
             {user ? (
               <button
                 onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="relative p-0.5 rounded-full ring-1 ring-zinc-300/80 active:scale-95 transition"
+                className="relative p-0.5 rounded-full ring-1 ring-zinc-700 active:scale-95 transition"
                 aria-label="Menu pengguna"
               >
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
                     alt={displayName}
-                    className="w-9 h-9 rounded-full object-cover border border-zinc-200"
+                    className="w-9 h-9 rounded-full object-cover border border-zinc-700"
                   />
                 ) : (
-                  <div className="w-9 h-9 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-xs">
+                  <div className="w-9 h-9 rounded-full bg-zinc-800 text-white flex items-center justify-center font-bold text-xs border border-zinc-700">
                     {displayName.charAt(0).toUpperCase()}
                   </div>
                 )}
@@ -233,13 +233,13 @@ export function Navbar({ user, profile }: NavbarProps) {
               <div className="flex items-center gap-2">
                 <Link
                   href="/login"
-                  className="px-3 py-1.5 text-xs font-semibold text-zinc-700 hover:text-zinc-900"
+                  className="px-3 py-1.5 text-xs font-semibold text-zinc-300 hover:text-white"
                 >
                   Masuk
                 </Link>
                 <Link
                   href="/register"
-                  className="px-3.5 py-1.5 rounded-full bg-zinc-900 text-xs font-medium text-white shadow-xs"
+                  className="px-3.5 py-1.5 rounded-full bg-white text-xs font-semibold text-zinc-900 shadow-xs hover:bg-zinc-100"
                 >
                   Mulai
                 </Link>
@@ -247,6 +247,7 @@ export function Navbar({ user, profile }: NavbarProps) {
             )}
           </div>
         </div>
+
 
         {/* Mobile menu dropdown drawer */}
         {mobileMenuOpen && (
