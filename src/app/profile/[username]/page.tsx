@@ -70,7 +70,7 @@ export default async function ProfilePage(props: ProfilePageProps) {
   if (user) {
     const { data } = await supabase
       .from('profiles')
-      .select('username, full_name, avatar_url')
+      .select('username, full_name, avatar_url, role, badge')
       .eq('id', user.id)
       .single()
     currentProfile = data
