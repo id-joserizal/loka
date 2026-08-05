@@ -134,7 +134,7 @@ function ArticleRow({ article, onDeleted, onStatusToggled }: ArticleRowProps) {
               <button
                 onClick={() => setMenuOpen(!menuOpen)}
                 disabled={isPending}
-                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition opacity-0 group-hover:opacity-100"
+                className="p-1.5 rounded-lg text-zinc-400 hover:text-zinc-700 hover:bg-zinc-100 transition sm:opacity-0 sm:group-hover:opacity-100"
               >
                 {isPending ? (
                   <Loader2 className="w-4 h-4 animate-spin" />

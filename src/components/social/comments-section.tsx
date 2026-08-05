@@ -187,19 +187,19 @@ export function CommentsSection({ articleId, currentUserId, initialComments }: C
 
                   {/* Reply Input Box */}
                   {replyingToId === comment.id && (
-                    <div className="mt-3 pt-3 border-t border-zinc-100 flex items-center gap-2">
+                    <div className="mt-3 pt-3 border-t border-zinc-100 flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
                       <input
                         type="text"
                         placeholder={`Balas ${authorName}...`}
                         value={replyText}
                         onChange={(e) => setReplyText(e.target.value)}
-                        className="flex-1 px-3 py-1.5 rounded-xl bg-zinc-50 border border-zinc-200 text-xs text-zinc-900 focus:outline-none focus:bg-white focus:border-zinc-900"
+                        className="flex-1 px-3 py-2 rounded-xl bg-zinc-50 border border-zinc-200 text-xs text-zinc-900 focus:outline-none focus:bg-white focus:border-zinc-900"
                       />
                       <button
                         type="button"
                         onClick={() => handlePostReply(comment.id)}
                         disabled={isPending || !replyText.trim()}
-                        className="px-3 py-1.5 rounded-xl bg-zinc-900 text-white text-xs font-medium disabled:opacity-50"
+                        className="px-4 py-2 rounded-xl bg-zinc-900 text-white text-xs font-medium disabled:opacity-50 shrink-0"
                       >
                         Kirim
                       </button>

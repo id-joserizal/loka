@@ -140,7 +140,7 @@ export function NotificationBell() {
       {open && (
         <>
           <div className="fixed inset-0 z-40" onClick={() => setOpen(false)} />
-          <div className="absolute right-0 mt-2 w-80 sm:w-96 rounded-2xl bg-white border border-zinc-200 shadow-xl z-50 overflow-hidden divide-y divide-zinc-100">
+          <div className="absolute right-0 mt-2 w-80 sm:w-96 max-w-[calc(100vw-1rem)] rounded-2xl bg-white border border-zinc-200 shadow-xl z-50 overflow-hidden divide-y divide-zinc-100">
             {/* Header */}
             <div className="p-4 flex items-center justify-between bg-zinc-50/50">
               <div className="flex items-center gap-2">

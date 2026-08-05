@@ -249,6 +249,27 @@ export default async function HomePage(props: HomePageProps) {
           <TrendingBar articles={trendingBarArticles} />
         )}
 
+        {/* Topik Populer — visible di mobile & tablet, hidden di lg (tampil di sidebar) */}
+        {popularTags && popularTags.length > 0 && (
+          <div className="lg:hidden mb-6">
+            <div className="flex items-center gap-2 mb-3">
+              <Sparkles className="w-3.5 h-3.5 text-zinc-600" />
+              <span className="text-xs font-bold uppercase tracking-wider text-zinc-700">Topik Populer</span>
+            </div>
+            <div className="flex gap-2 overflow-x-auto pb-1 scrollbar-hide -mx-4 px-4 sm:-mx-6 sm:px-6">
+              {popularTags.map((t: any) => (
+                <Link
+                  key={t.slug}
+                  href={`/tag/${t.slug}`}
+                  className="flex-shrink-0 px-3.5 py-1.5 rounded-full bg-white border border-zinc-200 hover:bg-zinc-100 text-xs font-medium text-zinc-800 transition"
+                >
+                  {t.name}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="grid grid-cols-1 lg:grid-cols-12 gap-12">
           {/* Left / Main Articles Feed */}
           <div className="lg:col-span-8 space-y-6">
@@ -336,8 +357,8 @@ export default async function HomePage(props: HomePageProps) {
             )}
           </div>
 
-          {/* Right Sidebar: Topics / Recommended */}
-          <aside className="lg:col-span-4 space-y-8 lg:pl-6 lg:border-l lg:border-zinc-200">
+          {/* Right Sidebar: Topics / Recommended — only on lg screens */}
+          <aside className="hidden lg:block lg:col-span-4 space-y-8 lg:pl-6 lg:border-l lg:border-zinc-200">
             {/* Popular Topics */}
             {popularTags && popularTags.length > 0 && (
               <div className="space-y-4">

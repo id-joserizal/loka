@@ -228,7 +228,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
         </h1>
 
         {/* Author Header */}
-        <div className="flex items-center justify-between border-y border-zinc-200/80 py-4 my-8">
+        <div className="flex flex-wrap items-center justify-between border-y border-zinc-200/80 py-4 my-8 gap-y-3">
           <div className="flex items-center gap-3.5">
             <Link href={`/profile/${authorUsername}`}>
               {authorAvatar ? (
@@ -312,7 +312,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
         )}
 
         {/* Interactive Social Stats Bar */}
-        <div className="flex items-center justify-between border-y border-zinc-200 py-4 my-8">
+        <div className="flex flex-wrap items-center justify-between border-y border-zinc-200 py-4 my-8 gap-y-3">
           <div className="flex items-center gap-4">
             <VoteButton
               articleId={article.id}

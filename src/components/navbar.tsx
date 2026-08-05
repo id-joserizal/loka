@@ -61,7 +61,7 @@ export function Navbar({ user, profile }: NavbarProps) {
           </form>
         </div>
 
-        {/* Right side actions */}
+        {/* Right side actions — desktop */}
         <div className="hidden sm:flex items-center gap-5">
           {user ? (
             <>
@@ -191,11 +191,13 @@ export function Navbar({ user, profile }: NavbarProps) {
           )}
         </div>
 
-        {/* Mobile menu toggle */}
-        <div className="flex sm:hidden items-center gap-2">
+        {/* Mobile right — notification bell + hamburger */}
+        <div className="flex sm:hidden items-center gap-1">
+          {user && <NotificationBell />}
           <button
             onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-            className="p-2 text-zinc-600 hover:text-zinc-900"
+            className="p-2 text-zinc-600 hover:text-zinc-900 rounded-lg hover:bg-zinc-100 transition"
+            aria-label="Buka menu"
           >
             {mobileMenuOpen ? <X className="w-6 h-6" /> : <Menu className="w-6 h-6" />}
           </button>
@@ -204,78 +206,130 @@ export function Navbar({ user, profile }: NavbarProps) {
 
       {/* Mobile menu dropdown */}
       {mobileMenuOpen && (
-        <div className="sm:hidden border-b border-zinc-200 bg-white p-4 space-y-4">
-          <form action="/search" method="GET" onSubmit={handleSearch} className="relative w-full">
-            <Search className="w-4 h-4 absolute left-3 top-2.5 text-zinc-400" />
-            <input
-              type="text"
-              name="q"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Cari artikel, tag, atau penulis..."
-              className="w-full pl-9 pr-4 py-2 rounded-xl bg-zinc-100 border border-transparent text-xs text-zinc-800 placeholder-zinc-400 focus:outline-none focus:bg-white focus:border-zinc-300 transition"
-            />
-          </form>
+        <div className="sm:hidden border-b border-zinc-200 bg-white shadow-lg">
+          {/* Search */}
+          <div className="px-4 pt-4 pb-3">
+            <form action="/search" method="GET" onSubmit={handleSearch} className="relative w-full">
+              <Search className="w-4 h-4 absolute left-3 top-1/2 -translate-y-1/2 text-zinc-400" />
+              <input
+                type="text"
+                name="q"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Cari artikel, tag, atau penulis..."
+                className="w-full pl-9 pr-4 py-2.5 rounded-xl bg-zinc-100 border border-transparent text-sm text-zinc-800 placeholder-zinc-400 focus:outline-none focus:bg-white focus:border-zinc-300 transition"
+              />
+            </form>
+          </div>
 
           {user ? (
-            <div className="space-y-2 pt-2 border-t border-zinc-100">
-              <div className="flex items-center gap-3 px-2 py-1">
-                <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center font-bold text-xs text-white">
-                  {displayName.charAt(0).toUpperCase()}
-                </div>
-                <div>
-                  <p className="text-xs font-bold text-zinc-900">{displayName}</p>
-                  <p className="text-[10px] text-zinc-400">@{username}</p>
+            <div className="px-4 pb-4 space-y-1 border-t border-zinc-100">
+              {/* User identity */}
+              <div className="flex items-center gap-3 py-3">
+                {avatarUrl ? (
+                  <img src={avatarUrl} alt={displayName} className="w-10 h-10 rounded-full object-cover border border-zinc-200 shrink-0" />
+                ) : (
+                  <div className="w-10 h-10 rounded-full bg-zinc-900 flex items-center justify-center font-bold text-sm text-white shrink-0">
+                    {displayName.charAt(0).toUpperCase()}
+                  </div>
+                )}
+                <div className="min-w-0">
+                  <p className="text-sm font-bold text-zinc-900 truncate">{displayName}</p>
+                  <p className="text-xs text-zinc-400 truncate">@{username}</p>
                 </div>
               </div>
 
+              {/* Menu items */}
               <Link
                 href="/write"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block py-2 text-xs font-semibold text-zinc-900"
+                className="flex items-center gap-3 w-full px-3 py-3 text-sm font-semibold text-zinc-900 hover:bg-zinc-100 rounded-xl transition"
               >
-                + Tulis Artikel Baru
+                <SquarePen className="w-4 h-4 text-zinc-500 shrink-0" />
+                <span>Tulis Artikel Baru</span>
               </Link>
+
               <Link
                 href={`/profile/${username}`}
                 onClick={() => setMobileMenuOpen(false)}
-                className="block py-2 text-xs text-zinc-700"
+                className="flex items-center gap-3 w-full px-3 py-3 text-sm text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
               >
-                Profil Saya
+                <UserIcon className="w-4 h-4 text-zinc-400 shrink-0" />
+                <span>Profil Saya</span>
               </Link>
+
+              <Link
+                href="/notifications"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 w-full px-3 py-3 text-sm text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
+              >
+                <Bell className="w-4 h-4 text-zinc-400 shrink-0" />
+                <span>Semua Notifikasi</span>
+              </Link>
+
               <Link
                 href="/bookmarks"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block py-2 text-xs text-zinc-700"
+                className="flex items-center gap-3 w-full px-3 py-3 text-sm text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
               >
-                Bookmark Saya
+                <Bookmark className="w-4 h-4 text-zinc-400 shrink-0" />
+                <span>Bookmark Saya</span>
               </Link>
+
               <Link
                 href="/dashboard"
                 onClick={() => setMobileMenuOpen(false)}
-                className="block py-2 text-xs text-zinc-700"
+                className="flex items-center gap-3 w-full px-3 py-3 text-sm text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
               >
-                Dashboard Penulis
+                <LayoutDashboard className="w-4 h-4 text-zinc-400 shrink-0" />
+                <span>Dashboard Penulis</span>
               </Link>
-              <form action={signOut}>
-                <button type="submit" className="block w-full text-left py-2 text-xs text-red-600">
-                  Keluar
-                </button>
-              </form>
+
+              <Link
+                href="/settings"
+                onClick={() => setMobileMenuOpen(false)}
+                className="flex items-center gap-3 w-full px-3 py-3 text-sm text-zinc-700 hover:bg-zinc-100 rounded-xl transition"
+              >
+                <Settings className="w-4 h-4 text-zinc-400 shrink-0" />
+                <span>Pengaturan</span>
+              </Link>
+
+              {profile?.role === 'admin' && (
+                <Link
+                  href="/admin"
+                  onClick={() => setMobileMenuOpen(false)}
+                  className="flex items-center gap-3 w-full px-3 py-3 text-sm font-semibold text-amber-900 bg-amber-50 hover:bg-amber-100 rounded-xl transition"
+                >
+                  <ShieldAlert className="w-4 h-4 text-amber-700 shrink-0" />
+                  <span>Portal Admin</span>
+                </Link>
+              )}
+
+              <div className="pt-1 border-t border-zinc-100">
+                <form action={signOut}>
+                  <button
+                    type="submit"
+                    className="flex items-center gap-3 w-full px-3 py-3 text-sm text-red-600 hover:bg-red-50 rounded-xl transition text-left"
+                  >
+                    <LogOut className="w-4 h-4 shrink-0" />
+                    <span>Keluar</span>
+                  </button>
+                </form>
+              </div>
             </div>
           ) : (
-            <div className="flex flex-col gap-2 pt-2 border-t border-zinc-100">
+            <div className="px-4 pb-4 flex flex-col gap-2 border-t border-zinc-100 pt-3">
               <Link
                 href="/login"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center py-2 rounded-xl bg-zinc-100 text-xs font-medium text-zinc-800"
+                className="w-full text-center py-2.5 rounded-xl bg-zinc-100 text-sm font-medium text-zinc-800 hover:bg-zinc-200 transition"
               >
                 Masuk
               </Link>
               <Link
                 href="/register"
                 onClick={() => setMobileMenuOpen(false)}
-                className="w-full text-center py-2 rounded-xl bg-zinc-900 text-xs font-semibold text-white"
+                className="w-full text-center py-2.5 rounded-xl bg-zinc-900 text-sm font-semibold text-white hover:bg-black transition"
               >
                 Daftar Akun
               </Link>

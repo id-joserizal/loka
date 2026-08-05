@@ -122,7 +122,7 @@ export function ArticleCard({ article }: ArticleCardProps) {
 
       {/* Optional Thumbnail Image */}
       {article.cover_image_url && (
-        <Link href={`/article/${article.slug}`} className="w-full sm:w-40 sm:h-28 rounded-2xl overflow-hidden bg-zinc-100 border border-zinc-200 flex-shrink-0">
+        <Link href={`/article/${article.slug}`} className="w-full h-44 sm:w-40 sm:h-28 rounded-2xl overflow-hidden bg-zinc-100 border border-zinc-200 flex-shrink-0">
           <img
             src={article.cover_image_url}
             alt={article.title}
