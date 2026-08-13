@@ -1,16 +1,24 @@
 'use client'
 
-import { useState, useEffect, useRef, useTransition } from 'react'
+import { useState, useEffect, useRef, useTransition, Suspense } from 'react'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
+import { useRouter, useSearchParams } from 'next/navigation'
 import { TiptapEditor } from '@/components/editor/tiptap-editor'
 import { PublishModal } from '@/components/editor/publish-modal'
+import { ResponseBanner, ParentArticleRef } from '@/components/editor/response-banner'
 import { saveArticle } from './actions'
+import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Check, Loader2, Sparkles } from 'lucide-react'
 
-export default function WritePage() {
+function WriteEditorContent() {
   const router = useRouter()
+  const searchParams = useSearchParams()
+  const initialResponseToId = searchParams.get('response_to') || undefined
+
   const [articleId, setArticleId] = useState<string | undefined>(undefined)
+  const [responseToId, setResponseToId] = useState<string | undefined>(initialResponseToId)
+  const [parentArticleRef, setParentArticleRef] = useState<ParentArticleRef | null>(null)
+
   const [title, setTitle] = useState('')
   const [content, setContent] = useState<any>(null)
 
@@ -18,6 +26,53 @@ export default function WritePage() {
   const [isPublishModalOpen, setIsPublishModalOpen] = useState(false)
   const [isPublishing, setIsPublishing] = useState(false)
   const [isPending, startTransition] = useTransition()
+
+  // Fetch parent article reference if response_to parameter exists
+  useEffect(() => {
+    if (!responseToId) {
+      setParentArticleRef(null)
+      return
+    }
+
+    let isMounted = true
+    const fetchParentArticle = async () => {
+      try {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('articles')
+          .select(`
+            id,
+            title,
+            cover_image_url,
+            profiles:author_id (
+              full_name,
+              username,
+              avatar_url
+            )
+          `)
+          .eq('id', responseToId)
+          .single()
+
+        if (data && isMounted) {
+          const authorObj = (data.profiles as any) || {}
+          setParentArticleRef({
+            id: data.id,
+            title: data.title,
+            coverImageUrl: data.cover_image_url,
+            authorName: authorObj.full_name || authorObj.username || 'Penulis',
+            authorAvatar: authorObj.avatar_url,
+          })
+        }
+      } catch (err) {
+        console.error('Error fetching response parent article:', err)
+      }
+    }
+
+    fetchParentArticle()
+    return () => {
+      isMounted = false
+    }
+  }, [responseToId])
 
   // Track changes for auto-save
   const isFirstRender = useRef(true)
@@ -36,7 +91,7 @@ export default function WritePage() {
     }, 5000)
 
     return () => clearTimeout(timer)
-  }, [title, content])
+  }, [title, content, responseToId])
 
   const handleAutoSaveDraft = async () => {
     if (!title.trim() && !content) return
@@ -47,6 +102,7 @@ export default function WritePage() {
       title: title || 'Draft Tanpa Judul',
       content: content ?? { type: 'doc', content: [] },
       status: 'draft',
+      responseToId: responseToId,
     })
 
     if (res.success && res.articleId) {
@@ -56,6 +112,12 @@ export default function WritePage() {
     } else {
       setSaveStatus('idle')
     }
+  }
+
+  const handleCancelResponse = () => {
+    setResponseToId(undefined)
+    setParentArticleRef(null)
+    router.replace('/write')
   }
 
   const handleFinalPublish = (metadata: { coverImageUrl: string; tags: string[]; excerpt: string }) => {
@@ -74,6 +136,7 @@ export default function WritePage() {
         tags: metadata.tags,
         excerpt: metadata.excerpt,
         status: 'published',
+        responseToId: responseToId,
       })
 
       setIsPublishing(false)
@@ -142,6 +205,14 @@ export default function WritePage() {
 
       {/* Editor Main Canvas */}
       <main className="flex-1 max-w-[720px] w-full mx-auto px-4 py-8 sm:py-12">
+        {/* Response Reference Banner (Placed directly above title input) */}
+        {parentArticleRef && (
+          <ResponseBanner
+            article={parentArticleRef}
+            onCancel={handleCancelResponse}
+          />
+        )}
+
         {/* Title Input */}
         <textarea
           rows={1}
@@ -171,5 +242,19 @@ export default function WritePage() {
         isPublishing={isPublishing || isPending}
       />
     </div>
+  )
+}
+
+export default function WritePage() {
+  return (
+    <Suspense
+      fallback={
+        <div className="min-h-screen bg-[#F4EFEA] flex items-center justify-center">
+          <Loader2 className="w-6 h-6 animate-spin text-zinc-500" />
+        </div>
+      }
+    >
+      <WriteEditorContent />
+    </Suspense>
   )
 }

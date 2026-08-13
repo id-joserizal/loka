@@ -12,6 +12,9 @@ import { FollowButton } from '@/components/social/follow-button'
 import { ShareButton } from '@/components/social/share-button'
 import { CommentsSection } from '@/components/social/comments-section'
 import { ArticleReportButton } from '@/components/article/article-report-button'
+import { WriteResponseButton } from '@/components/article/write-response-button'
+import { ResponseParentBanner } from '@/components/article/response-parent-banner'
+import { ArticleResponsesSection } from '@/components/article/article-responses-section'
 import { BadgeIcon } from '@/components/ui/badge-icon'
 import { ArticleViewTracker } from '@/components/article/article-view-tracker'
 import { Eye } from 'lucide-react'
@@ -67,7 +70,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
     currentProfile = data
   }
 
-  // Fetch article with profile & tags
+  // Fetch article with profile, response_to & tags
   const { data: article } = await supabase
     .from('articles')
     .select(`
@@ -79,6 +82,16 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
         avatar_url,
         badge,
         bio
+      ),
+      response_to:response_to_id (
+        id,
+        title,
+        slug,
+        profiles:author_id (
+          username,
+          full_name,
+          avatar_url
+        )
       ),
       article_tags (
         tags (
@@ -215,6 +228,40 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
     .neq('id', article.id)
     .limit(3)
 
+  // Fetch responses if response_count > 0
+  let responsesData: any[] = []
+  if ((article as any).response_count > 0) {
+    const { data: resp } = await supabase
+      .from('articles')
+      .select(`
+        id,
+        title,
+        slug,
+        excerpt,
+        cover_image_url,
+        reading_time,
+        published_at,
+        created_at,
+        profiles:author_id (
+          username,
+          full_name,
+          avatar_url,
+          badge
+        ),
+        article_tags (
+          tags (
+            name,
+            slug
+          )
+        )
+      `)
+      .eq('response_to_id', article.id)
+      .eq('status', 'published')
+      .order('published_at', { ascending: false })
+
+    responsesData = resp || []
+  }
+
   return (
     <div className="min-h-screen bg-[#F4EFEA] text-zinc-900 flex flex-col">
       <ArticleViewTracker articleId={article.id} userId={user?.id ?? null} />
@@ -222,6 +269,11 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
       <Navbar user={user} profile={currentProfile} />
 
       <main className="flex-1 max-w-[720px] w-full mx-auto px-4 py-10 sm:py-16">
+        {/* Banner Menanggapi jika artikel ini adalah tanggapan */}
+        {article.response_to && (
+          <ResponseParentBanner responseTo={article.response_to as any} />
+        )}
+
         {/* Article Title */}
         <h1 className="text-4xl sm:text-5xl md:text-[52px] font-serif font-extrabold text-zinc-900 leading-[1.12] tracking-tight mb-8">
           {article.title}
@@ -271,6 +323,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            {user && <WriteResponseButton articleId={article.id} />}
             <ShareButton
               title={article.title}
               coverImageUrl={article.cover_image_url}
@@ -327,6 +380,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
           </div>
 
           <div className="flex items-center gap-2">
+            {user && <WriteResponseButton articleId={article.id} />}
             <ShareButton
               title={article.title}
               coverImageUrl={article.cover_image_url}
@@ -336,6 +390,13 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
             <BookmarkButton articleId={article.id} initialIsBookmarked={isBookmarked} />
           </div>
         </div>
+
+        {/* Section Tanggapan (Jika ada artikel yang menanggapi) */}
+        <ArticleResponsesSection
+          articleId={article.id}
+          initialResponses={responsesData}
+          responseCount={(article as any).response_count || responsesData.length}
+        />
 
         {/* Interactive Comments Section */}
         <CommentsSection

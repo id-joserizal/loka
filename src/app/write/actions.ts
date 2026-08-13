@@ -12,6 +12,7 @@ export interface SaveArticleInput {
   excerpt?: string
   status: 'draft' | 'published'
   tags?: string[]
+  responseToId?: string
 }
 
 // Normalize slug: no random suffix, just clean slug from text
@@ -59,6 +60,26 @@ export async function saveArticle(input: SaveArticleInput) {
     return { error: 'Kamu harus login terlebih dahulu' }
   }
 
+  // Rate Limit check for responses (max 1 response per article per user per 24 hours)
+  if (input.responseToId) {
+    const twentyFourHoursAgo = new Date(Date.now() - 24 * 60 * 60 * 1000).toISOString()
+    let rateCheckQuery = supabase
+      .from('articles')
+      .select('id')
+      .eq('author_id', user.id)
+      .eq('response_to_id', input.responseToId)
+      .gte('created_at', twentyFourHoursAgo)
+
+    if (input.id) {
+      rateCheckQuery = rateCheckQuery.neq('id', input.id)
+    }
+
+    const { data: existingResponse } = await rateCheckQuery.maybeSingle()
+    if (existingResponse) {
+      return { error: 'Maksimal 1 tanggapan per artikel per user dalam 24 jam.' }
+    }
+  }
+
   const title = input.title?.trim() || 'Tanpa Judul'
   // Normalize content — never pass null to a NOT NULL JSONB column
   const content = input.content ?? { type: 'doc', content: [] }
@@ -96,18 +117,24 @@ export async function saveArticle(input: SaveArticleInput) {
       slug = await ensureUniqueSlug(supabase, baseSlug, articleId)
     }
 
+    const updatePayload: any = {
+      title,
+      slug,
+      content,
+      cover_image_url: input.coverImageUrl || null,
+      excerpt,
+      status: input.status,
+      reading_time: readingTime,
+      published_at: publishedAt,
+    }
+
+    if (input.responseToId !== undefined) {
+      updatePayload.response_to_id = input.responseToId || null
+    }
+
     const { error: updateError } = await supabase
       .from('articles')
-      .update({
-        title,
-        slug,
-        content,
-        cover_image_url: input.coverImageUrl || null,
-        excerpt,
-        status: input.status,
-        reading_time: readingTime,
-        published_at: publishedAt,
-      })
+      .update(updatePayload)
       .eq('id', articleId)
       .eq('author_id', user.id)
 
@@ -120,19 +147,25 @@ export async function saveArticle(input: SaveArticleInput) {
     const baseSlug = makeSlug(title)
     const slug = await ensureUniqueSlug(supabase, baseSlug)
 
+    const insertPayload: any = {
+      author_id: user.id,
+      title,
+      slug,
+      content,
+      cover_image_url: input.coverImageUrl || null,
+      excerpt,
+      status: input.status,
+      reading_time: readingTime,
+      published_at: input.status === 'published' ? new Date().toISOString() : null,
+    }
+
+    if (input.responseToId) {
+      insertPayload.response_to_id = input.responseToId
+    }
+
     const { data: newArticle, error: insertError } = await supabase
       .from('articles')
-      .insert({
-        author_id: user.id,
-        title,
-        slug,
-        content,
-        cover_image_url: input.coverImageUrl || null,
-        excerpt,
-        status: input.status,
-        reading_time: readingTime,
-        published_at: input.status === 'published' ? new Date().toISOString() : null,
-      })
+      .insert(insertPayload)
       .select('id, slug')
       .single()
 
@@ -142,6 +175,24 @@ export async function saveArticle(input: SaveArticleInput) {
     }
 
     articleId = newArticle.id
+  }
+
+  // Create Notification if response_to_id is provided and status is published
+  if (input.responseToId && input.status === 'published' && articleId) {
+    const { data: parentArticle } = await supabase
+      .from('articles')
+      .select('author_id')
+      .eq('id', input.responseToId)
+      .single()
+
+    if (parentArticle && parentArticle.author_id && parentArticle.author_id !== user.id) {
+      await supabase.from('notifications').insert({
+        user_id: parentArticle.author_id,
+        actor_id: user.id,
+        type: 'response',
+        article_id: articleId,
+      })
+    }
   }
 
   // Handle Tags — lookup by name (not slug) to avoid random-suffix collisions

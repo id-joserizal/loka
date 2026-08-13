@@ -9,6 +9,7 @@ import {
   MessageSquare,
   UserPlus,
   CornerDownRight,
+  CornerUpRight,
   Inbox,
 } from 'lucide-react'
 import { markNotificationAsRead, markAllNotificationsAsRead } from './actions'
@@ -60,6 +61,8 @@ export function NotificationsClient({
         return <MessageSquare className="w-4 h-4 text-blue-600" />
       case 'reply':
         return <CornerDownRight className="w-4 h-4 text-indigo-600" />
+      case 'response':
+        return <CornerUpRight className="w-4 h-4 text-purple-600" />
       case 'follow':
         return <UserPlus className="w-4 h-4 text-amber-600" />
       default:
@@ -90,6 +93,13 @@ export function NotificationsClient({
         return (
           <>
             <strong className="text-zinc-900 font-semibold">{actorName}</strong> membalas komentar Anda pada{' '}
+            {articleTitle && <span className="font-serif italic text-zinc-800 font-medium">"{articleTitle}"</span>}
+          </>
+        )
+      case 'response':
+        return (
+          <>
+            <strong className="text-zinc-900 font-semibold">{actorName}</strong> menanggapi tulisan Anda:{' '}
             {articleTitle && <span className="font-serif italic text-zinc-800 font-medium">"{articleTitle}"</span>}
           </>
         )

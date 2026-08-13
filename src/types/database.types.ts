@@ -47,6 +47,8 @@ export interface Database {
           status: 'draft' | 'published'
           reading_time: number | null
           published_at: string | null
+          response_to_id: string | null
+          response_count: number
           created_at: string
           updated_at: string
         }
@@ -61,6 +63,8 @@ export interface Database {
           status?: 'draft' | 'published'
           reading_time?: number | null
           published_at?: string | null
+          response_to_id?: string | null
+          response_count?: number
           created_at?: string
           updated_at?: string
         }
@@ -75,6 +79,8 @@ export interface Database {
           status?: 'draft' | 'published'
           reading_time?: number | null
           published_at?: string | null
+          response_to_id?: string | null
+          response_count?: number
           created_at?: string
           updated_at?: string
         }
@@ -198,7 +204,7 @@ export interface Database {
           id: string
           user_id: string
           actor_id: string
-          type: 'upvote' | 'downvote' | 'comment' | 'reply' | 'follow'
+          type: 'upvote' | 'downvote' | 'comment' | 'reply' | 'follow' | 'response'
           article_id: string | null
           comment_id: string | null
           read: boolean
@@ -208,7 +214,7 @@ export interface Database {
           id?: string
           user_id: string
           actor_id: string
-          type: 'upvote' | 'downvote' | 'comment' | 'reply' | 'follow'
+          type: 'upvote' | 'downvote' | 'comment' | 'reply' | 'follow' | 'response'
           article_id?: string | null
           comment_id?: string | null
           read?: boolean
@@ -218,7 +224,7 @@ export interface Database {
           id?: string
           user_id?: string
           actor_id?: string
-          type?: 'upvote' | 'downvote' | 'comment' | 'reply' | 'follow'
+          type?: 'upvote' | 'downvote' | 'comment' | 'reply' | 'follow' | 'response'
           article_id?: string | null
           comment_id?: string | null
           read?: boolean

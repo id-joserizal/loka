@@ -9,6 +9,7 @@ import {
   MessageSquare,
   UserPlus,
   CornerDownRight,
+  CornerUpRight,
   ExternalLink,
 } from 'lucide-react'
 import {
@@ -64,6 +65,8 @@ export function NotificationBell() {
         return <MessageSquare className="w-3.5 h-3.5 text-blue-600" />
       case 'reply':
         return <CornerDownRight className="w-3.5 h-3.5 text-indigo-600" />
+      case 'response':
+        return <CornerUpRight className="w-3.5 h-3.5 text-purple-600" />
       case 'follow':
         return <UserPlus className="w-3.5 h-3.5 text-amber-600" />
       default:
@@ -94,6 +97,13 @@ export function NotificationBell() {
         return (
           <>
             <strong className="text-zinc-900 font-semibold">{actorName}</strong> membalas komentar Anda di{' '}
+            {articleTitle && <span className="font-serif italic text-zinc-700">"{articleTitle}"</span>}
+          </>
+        )
+      case 'response':
+        return (
+          <>
+            <strong className="text-zinc-900 font-semibold">{actorName}</strong> menanggapi tulisan Anda:{' '}
             {articleTitle && <span className="font-serif italic text-zinc-700">"{articleTitle}"</span>}
           </>
         )
