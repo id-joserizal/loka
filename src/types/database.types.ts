@@ -48,6 +48,7 @@ export interface Database {
           reading_time: number | null
           published_at: string | null
           response_to_id: string | null
+          response_to_comment_id: string | null
           response_count: number
           created_at: string
           updated_at: string
@@ -64,6 +65,7 @@ export interface Database {
           reading_time?: number | null
           published_at?: string | null
           response_to_id?: string | null
+          response_to_comment_id?: string | null
           response_count?: number
           created_at?: string
           updated_at?: string
@@ -80,6 +82,7 @@ export interface Database {
           reading_time?: number | null
           published_at?: string | null
           response_to_id?: string | null
+          response_to_comment_id?: string | null
           response_count?: number
           created_at?: string
           updated_at?: string

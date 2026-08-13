@@ -93,6 +93,18 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
           avatar_url
         )
       ),
+      response_to_comment:response_to_comment_id (
+        id,
+        content,
+        profiles:user_id (
+          username,
+          full_name,
+          avatar_url
+        ),
+        articles:article_id (
+          slug
+        )
+      ),
       article_tags (
         tags (
           id,
@@ -270,9 +282,31 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
 
       <main className="flex-1 max-w-[720px] w-full mx-auto px-4 py-10 sm:py-16">
         {/* Banner Menanggapi jika artikel ini adalah tanggapan */}
-        {article.response_to && (
-          <ResponseParentBanner responseTo={article.response_to as any} />
-        )}
+        {(() => {
+          const commentObj = (article as any).response_to_comment
+          if (commentObj) {
+            const commentAuthor = commentObj.profiles || {}
+            const commentArticleSlug = commentObj.articles?.slug || null
+            return (
+              <ResponseParentBanner
+                responseTo={null}
+                responseToComment={{
+                  id: commentObj.id,
+                  content: commentObj.content,
+                  author: {
+                    name: commentAuthor.full_name || commentAuthor.username || 'Penulis',
+                    username: commentAuthor.username,
+                  },
+                }}
+                responseToCommentArticleSlug={commentArticleSlug}
+              />
+            )
+          }
+          if (article.response_to) {
+            return <ResponseParentBanner responseTo={article.response_to as any} />
+          }
+          return null
+        })()}
 
         {/* Article Title */}
         <h1 className="text-4xl sm:text-5xl md:text-[52px] font-serif font-extrabold text-zinc-900 leading-[1.12] tracking-tight mb-8">
@@ -401,6 +435,7 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
         {/* Interactive Comments Section */}
         <CommentsSection
           articleId={article.id}
+          articleSlug={slug}
           currentUserId={user?.id}
           initialComments={comments as any || []}
         />

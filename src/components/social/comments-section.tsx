@@ -1,8 +1,9 @@
 'use client'
 
 import { useState, useTransition } from 'react'
+import Link from 'next/link'
 import { addComment, deleteComment } from '@/app/article/[slug]/actions'
-import { MessageCircle, CornerDownRight, Trash2, Send, Loader2 } from 'lucide-react'
+import { MessageCircle, CornerDownRight, Trash2, Send, Loader2, PenLine } from 'lucide-react'
 
 export interface CommentItem {
   id: string
@@ -19,11 +20,12 @@ export interface CommentItem {
 
 interface CommentsSectionProps {
   articleId: string
+  articleSlug: string
   currentUserId?: string
   initialComments: CommentItem[]
 }
 
-export function CommentsSection({ articleId, currentUserId, initialComments }: CommentsSectionProps) {
+export function CommentsSection({ articleId, articleSlug, currentUserId, initialComments }: CommentsSectionProps) {
   const [comments, setComments] = useState<CommentItem[]>(initialComments)
   const [newCommentText, setNewCommentText] = useState('')
   const [replyingToId, setReplyingToId] = useState<string | null>(null)
@@ -135,7 +137,7 @@ export function CommentsSection({ articleId, currentUserId, initialComments }: C
             const replies = getReplies(comment.id)
 
             return (
-              <div key={comment.id} className="space-y-4">
+              <div key={comment.id} id={`comment-${comment.id}`} className="space-y-4 scroll-mt-20">
                 {/* Parent Comment Card */}
                 <div className="p-4 rounded-2xl bg-white border border-zinc-200/80 space-y-3 shadow-xs">
                   <div className="flex items-center justify-between">
@@ -174,15 +176,25 @@ export function CommentsSection({ articleId, currentUserId, initialComments }: C
                     {comment.content}
                   </p>
 
-                  {/* Reply Action button */}
+                  {/* Reply Action buttons */}
                   {currentUserId && (
-                    <button
-                      onClick={() => setReplyingToId(replyingToId === comment.id ? null : comment.id)}
-                      className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-500 hover:text-zinc-900 transition"
-                    >
-                      <CornerDownRight className="w-3 h-3" />
-                      <span>Balas</span>
-                    </button>
+                    <div className="flex items-center gap-3">
+                      <button
+                        onClick={() => setReplyingToId(replyingToId === comment.id ? null : comment.id)}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-500 hover:text-zinc-900 transition"
+                      >
+                        <CornerDownRight className="w-3 h-3" />
+                        <span>Balas</span>
+                      </button>
+                      <Link
+                        href={`/write?response_to=${articleId}&response_to_comment=${comment.id}`}
+                        className="inline-flex items-center gap-1 text-[11px] font-semibold text-zinc-400 hover:text-zinc-900 transition"
+                        title="Tanggapi komentar ini dengan artikel baru"
+                      >
+                        <PenLine className="w-3 h-3" />
+                        <span>Tanggapi dengan Artikel</span>
+                      </Link>
+                    </div>
                   )}
 
                   {/* Reply Input Box */}

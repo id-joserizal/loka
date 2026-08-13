@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { useRouter, useSearchParams } from 'next/navigation'
 import { TiptapEditor } from '@/components/editor/tiptap-editor'
 import { PublishModal } from '@/components/editor/publish-modal'
-import { ResponseBanner, ParentArticleRef } from '@/components/editor/response-banner'
+import { ResponseBanner, ParentArticleRef, ParentCommentRef } from '@/components/editor/response-banner'
 import { saveArticle } from './actions'
 import { createClient } from '@/lib/supabase/client'
 import { ArrowLeft, Check, Loader2, Sparkles } from 'lucide-react'
@@ -14,10 +14,13 @@ function WriteEditorContent() {
   const router = useRouter()
   const searchParams = useSearchParams()
   const initialResponseToId = searchParams.get('response_to') || undefined
+  const initialResponseToCommentId = searchParams.get('response_to_comment') || undefined
 
   const [articleId, setArticleId] = useState<string | undefined>(undefined)
   const [responseToId, setResponseToId] = useState<string | undefined>(initialResponseToId)
+  const [responseToCommentId, setResponseToCommentId] = useState<string | undefined>(initialResponseToCommentId)
   const [parentArticleRef, setParentArticleRef] = useState<ParentArticleRef | null>(null)
+  const [parentCommentRef, setParentCommentRef] = useState<ParentCommentRef | null>(null)
 
   const [title, setTitle] = useState('')
   const [content, setContent] = useState<any>(null)
@@ -27,7 +30,7 @@ function WriteEditorContent() {
   const [isPublishing, setIsPublishing] = useState(false)
   const [isPending, startTransition] = useTransition()
 
-  // Fetch parent article reference if response_to parameter exists
+  // Fetch parent article reference (for both article and comment response modes)
   useEffect(() => {
     if (!responseToId) {
       setParentArticleRef(null)
@@ -74,6 +77,58 @@ function WriteEditorContent() {
     }
   }, [responseToId])
 
+  // Fetch parent comment reference when response_to_comment is provided
+  useEffect(() => {
+    if (!responseToCommentId || !responseToId) {
+      setParentCommentRef(null)
+      return
+    }
+
+    let isMounted = true
+    const fetchParentComment = async () => {
+      try {
+        const supabase = createClient()
+        const { data } = await supabase
+          .from('comments')
+          .select(`
+            id,
+            content,
+            profiles:user_id (
+              full_name,
+              username,
+              avatar_url
+            ),
+            articles:article_id (
+              id,
+              title,
+              slug
+            )
+          `)
+          .eq('id', responseToCommentId)
+          .single()
+
+        if (data && isMounted) {
+          const authorObj = (data.profiles as any) || {}
+          const articleObj = (data.articles as any) || {}
+          setParentCommentRef({
+            id: data.id,
+            content: data.content,
+            authorName: authorObj.full_name || authorObj.username || 'Penulis',
+            authorAvatar: authorObj.avatar_url || null,
+            articleTitle: articleObj.title || '',
+          })
+        }
+      } catch (err) {
+        console.error('Error fetching parent comment:', err)
+      }
+    }
+
+    fetchParentComment()
+    return () => {
+      isMounted = false
+    }
+  }, [responseToCommentId, responseToId])
+
   // Track changes for auto-save
   const isFirstRender = useRef(true)
 
@@ -91,7 +146,7 @@ function WriteEditorContent() {
     }, 5000)
 
     return () => clearTimeout(timer)
-  }, [title, content, responseToId])
+  }, [title, content, responseToId, responseToCommentId])
 
   const handleAutoSaveDraft = async () => {
     if (!title.trim() && !content) return
@@ -103,6 +158,7 @@ function WriteEditorContent() {
       content: content ?? { type: 'doc', content: [] },
       status: 'draft',
       responseToId: responseToId,
+      responseToCommentId: responseToCommentId,
     })
 
     if (res.success && res.articleId) {
@@ -116,7 +172,9 @@ function WriteEditorContent() {
 
   const handleCancelResponse = () => {
     setResponseToId(undefined)
+    setResponseToCommentId(undefined)
     setParentArticleRef(null)
+    setParentCommentRef(null)
     router.replace('/write')
   }
 
@@ -137,6 +195,7 @@ function WriteEditorContent() {
         excerpt: metadata.excerpt,
         status: 'published',
         responseToId: responseToId,
+        responseToCommentId: responseToCommentId,
       })
 
       setIsPublishing(false)
@@ -205,10 +264,11 @@ function WriteEditorContent() {
 
       {/* Editor Main Canvas */}
       <main className="flex-1 max-w-[720px] w-full mx-auto px-4 py-8 sm:py-12">
-        {/* Response Reference Banner (Placed directly above title input) */}
-        {parentArticleRef && (
+        {/* Response Reference Banner — diprioritaskan tampilkan banner komentar jika ada */}
+        {(parentArticleRef || parentCommentRef) && (
           <ResponseBanner
-            article={parentArticleRef}
+            article={parentArticleRef ?? { id: '', title: '', authorName: '' }}
+            parentComment={parentCommentRef}
             onCancel={handleCancelResponse}
           />
         )}

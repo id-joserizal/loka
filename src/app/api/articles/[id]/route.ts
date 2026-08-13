@@ -31,6 +31,15 @@ export async function GET(
             avatar_url
           )
         ),
+        response_to_comment:response_to_comment_id (
+          id,
+          content,
+          profiles:user_id (
+            username,
+            full_name,
+            avatar_url
+          )
+        ),
         article_tags (
           tags (
             id,
@@ -61,9 +70,25 @@ export async function GET(
       }
     }
 
+    let responseToCommentPayload = null
+    if (article.response_to_comment) {
+      const commentObj = article.response_to_comment as any
+      const commentAuthor = commentObj.profiles || {}
+      responseToCommentPayload = {
+        id: commentObj.id,
+        content: commentObj.content,
+        author: {
+          name: commentAuthor.full_name || commentAuthor.username || 'Penulis',
+          username: commentAuthor.username || '',
+          avatar: commentAuthor.avatar_url || null,
+        },
+      }
+    }
+
     return NextResponse.json({
       ...article,
       response_to: responseToPayload,
+      response_to_comment: responseToCommentPayload,
     })
   } catch (err: any) {
     return NextResponse.json({ error: err.message || 'Internal Server Error' }, { status: 500 })

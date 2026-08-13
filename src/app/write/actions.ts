@@ -13,6 +13,7 @@ export interface SaveArticleInput {
   status: 'draft' | 'published'
   tags?: string[]
   responseToId?: string
+  responseToCommentId?: string
 }
 
 // Normalize slug: no random suffix, just clean slug from text
@@ -131,6 +132,9 @@ export async function saveArticle(input: SaveArticleInput) {
     if (input.responseToId !== undefined) {
       updatePayload.response_to_id = input.responseToId || null
     }
+    if (input.responseToCommentId !== undefined) {
+      updatePayload.response_to_comment_id = input.responseToCommentId || null
+    }
 
     const { error: updateError } = await supabase
       .from('articles')
@@ -162,6 +166,9 @@ export async function saveArticle(input: SaveArticleInput) {
     if (input.responseToId) {
       insertPayload.response_to_id = input.responseToId
     }
+    if (input.responseToCommentId) {
+      insertPayload.response_to_comment_id = input.responseToCommentId
+    }
 
     const { data: newArticle, error: insertError } = await supabase
       .from('articles')
@@ -191,6 +198,25 @@ export async function saveArticle(input: SaveArticleInput) {
         actor_id: user.id,
         type: 'response',
         article_id: articleId,
+      })
+    }
+  }
+
+  // Create Notification if responding to a specific comment
+  if (input.responseToCommentId && input.status === 'published' && articleId) {
+    const { data: parentComment } = await supabase
+      .from('comments')
+      .select('user_id')
+      .eq('id', input.responseToCommentId)
+      .single()
+
+    if (parentComment && parentComment.user_id && parentComment.user_id !== user.id) {
+      await supabase.from('notifications').insert({
+        user_id: parentComment.user_id,
+        actor_id: user.id,
+        type: 'response',
+        article_id: articleId,
+        comment_id: input.responseToCommentId,
       })
     }
   }
