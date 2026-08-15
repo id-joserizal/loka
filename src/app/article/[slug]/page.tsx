@@ -362,7 +362,9 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
               title={article.title}
               coverImageUrl={article.cover_image_url}
               authorName={authorName}
+              authorAvatar={authorAvatar}
               excerpt={article.excerpt}
+              content={article.content}
             />
             <BookmarkButton articleId={article.id} initialIsBookmarked={isBookmarked} />
             {user && <ArticleReportButton articleId={article.id} articleTitle={article.title} />}
@@ -419,7 +421,9 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
               title={article.title}
               coverImageUrl={article.cover_image_url}
               authorName={authorName}
+              authorAvatar={authorAvatar}
               excerpt={article.excerpt}
+              content={article.content}
             />
             <BookmarkButton articleId={article.id} initialIsBookmarked={isBookmarked} />
           </div>

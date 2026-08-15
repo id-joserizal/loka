@@ -19,6 +19,8 @@
     "@tiptap/pm": "^3.29.2",
     "@tiptap/react": "^3.29.2",
     "@tiptap/starter-kit": "^3.29.2",
+    "html-to-image": "^1.11.13",
+    "jszip": "^3.10.1",
     "lucide-react": "^1.27.0",
     "next": "16.2.12",
     "react": "19.2.4",
@@ -26,6 +28,7 @@
   },
   "devDependencies": {
     "@tailwindcss/postcss": "^4",
+    "@types/jszip": "^3.4.0",
     "@types/node": "^20",
     "@types/react": "^19",
     "@types/react-dom": "^19",

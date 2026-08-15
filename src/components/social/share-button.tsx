@@ -1,7 +1,8 @@
 'use client'
 
 import { useState } from 'react'
-import { Share2, Check, Link as LinkIcon, X, FileText, Image as ImageIcon } from 'lucide-react'
+import { Share2, Check, Link as LinkIcon, X, FileText, Image as ImageIcon, Sparkles } from 'lucide-react'
+import { InstagramCarouselModal } from './instagram-carousel-modal'
 
 function XTwitterIcon({ className }: { className?: string }) {
   return (
@@ -59,12 +60,22 @@ interface ShareButtonProps {
   title: string
   coverImageUrl?: string | null
   authorName?: string
+  authorAvatar?: string | null
   excerpt?: string | null
+  content?: any
 }
 
-export function ShareButton({ title, coverImageUrl, authorName, excerpt }: ShareButtonProps) {
+export function ShareButton({
+  title,
+  coverImageUrl,
+  authorName,
+  authorAvatar,
+  excerpt,
+  content,
+}: ShareButtonProps) {
   const [copied, setCopied] = useState(false)
   const [open, setOpen] = useState(false)
+  const [isInstagramModalOpen, setIsInstagramModalOpen] = useState(false)
 
   const articleUrl = typeof window !== 'undefined' ? window.location.href : ''
 
@@ -182,10 +193,39 @@ export function ShareButton({ title, coverImageUrl, authorName, excerpt }: Share
                 )}
               </div>
 
+              {/* Instagram Carousel Feature Card */}
+              <div className="pt-2">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setOpen(false)
+                    setIsInstagramModalOpen(true)
+                  }}
+                  className="w-full flex items-center justify-between p-3 rounded-2xl bg-gradient-to-r from-purple-50 via-pink-50 to-amber-50 hover:from-purple-100 hover:via-pink-100 hover:to-amber-100 border border-pink-200/80 text-zinc-900 transition group shadow-xs"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="w-9.5 h-9.5 rounded-xl bg-gradient-to-tr from-amber-500 via-rose-500 to-purple-600 text-white flex items-center justify-center shadow-xs group-hover:scale-105 transition">
+                      <Sparkles className="w-5 h-5" />
+                    </div>
+                    <div className="text-left">
+                      <span className="text-xs font-bold block text-zinc-900">
+                        Instagram Carousel Cards
+                      </span>
+                      <span className="text-[10px] text-zinc-500 block">
+                        Buat & unduh kartu slide otomatis untuk Feed/Story
+                      </span>
+                    </div>
+                  </div>
+                  <span className="px-2.5 py-1 rounded-full bg-white text-purple-700 text-[10px] font-bold shadow-2xs border border-pink-200 shrink-0">
+                    Buat Slide
+                  </span>
+                </button>
+              </div>
+
               {/* Share Options */}
               <div className="space-y-3 pt-2 border-t border-zinc-100">
                 <p className="text-[11px] font-semibold tracking-wider text-zinc-400 uppercase text-center">
-                  Bagikan Artikel Ke
+                  Bagikan Link Artikel Ke
                 </p>
 
                 {/* Social Share Buttons Grid */}
@@ -271,6 +311,19 @@ export function ShareButton({ title, coverImageUrl, authorName, excerpt }: Share
           </div>
         </div>
       )}
+
+      {/* Instagram Carousel Modal */}
+      <InstagramCarouselModal
+        isOpen={isInstagramModalOpen}
+        onClose={() => setIsInstagramModalOpen(false)}
+        title={title}
+        coverImageUrl={coverImageUrl}
+        authorName={authorName}
+        authorAvatar={authorAvatar}
+        excerpt={excerpt}
+        content={content}
+      />
     </>
   )
 }
+
