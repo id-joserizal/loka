@@ -99,7 +99,7 @@ export function NotificationsClient({
       case 'response':
         return (
           <>
-            <strong className="text-zinc-900 font-semibold">{actorName}</strong> menanggapi tulisan Anda:{' '}
+            <strong className="text-zinc-900 font-semibold">{actorName}</strong> menanggapi {item.comment_id ? 'komentar' : 'tulisan'} Anda dengan artikel:{' '}
             {articleTitle && <span className="font-serif italic text-zinc-800 font-medium">"{articleTitle}"</span>}
           </>
         )

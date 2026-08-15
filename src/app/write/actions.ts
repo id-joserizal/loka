@@ -193,12 +193,24 @@ export async function saveArticle(input: SaveArticleInput) {
       .single()
 
     if (parentArticle && parentArticle.author_id && parentArticle.author_id !== user.id) {
-      await supabase.from('notifications').insert({
-        user_id: parentArticle.author_id,
-        actor_id: user.id,
-        type: 'response',
-        article_id: articleId,
-      })
+      // Check if notification already exists to prevent duplicate inserts
+      const { data: existingNotif } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('user_id', parentArticle.author_id)
+        .eq('actor_id', user.id)
+        .eq('type', 'response')
+        .eq('article_id', articleId)
+        .maybeSingle()
+
+      if (!existingNotif) {
+        await supabase.from('notifications').insert({
+          user_id: parentArticle.author_id,
+          actor_id: user.id,
+          type: 'response',
+          article_id: articleId,
+        })
+      }
     }
   }
 
@@ -211,13 +223,26 @@ export async function saveArticle(input: SaveArticleInput) {
       .single()
 
     if (parentComment && parentComment.user_id && parentComment.user_id !== user.id) {
-      await supabase.from('notifications').insert({
-        user_id: parentComment.user_id,
-        actor_id: user.id,
-        type: 'response',
-        article_id: articleId,
-        comment_id: input.responseToCommentId,
-      })
+      // Check if notification already exists to prevent duplicate inserts
+      const { data: existingNotif } = await supabase
+        .from('notifications')
+        .select('id')
+        .eq('user_id', parentComment.user_id)
+        .eq('actor_id', user.id)
+        .eq('type', 'response')
+        .eq('article_id', articleId)
+        .eq('comment_id', input.responseToCommentId)
+        .maybeSingle()
+
+      if (!existingNotif) {
+        await supabase.from('notifications').insert({
+          user_id: parentComment.user_id,
+          actor_id: user.id,
+          type: 'response',
+          article_id: articleId,
+          comment_id: input.responseToCommentId,
+        })
+      }
     }
   }
 
