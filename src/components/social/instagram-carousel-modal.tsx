@@ -61,7 +61,6 @@ function buildInitialSlides(
       } else if (node.type === 'paragraph') {
         const text = node.content?.map((c: any) => c.text).filter(Boolean).join(' ')
         if (text && text.length > 20) {
-          // If paragraph is long, split into sentences
           if (text.length > 160) {
             const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]
             sentences.forEach((s: string) => {
@@ -148,7 +147,7 @@ export function InstagramCarouselModal({
   const [editingSlideId, setEditingSlideId] = useState<string | null>(null)
   const [editingText, setEditingText] = useState('')
 
-  const slideRefs = useRef<(HTMLDivElement | null)[]>([])
+  const exportSlideRefs = useRef<(HTMLDivElement | null)[]>([])
 
   // Re-build slides whenever modal opens or props change
   useEffect(() => {
@@ -264,9 +263,9 @@ export function InstagramCarouselModal({
 
   const currentTheme = getThemeStyles()
 
-  // Download Single Slide PNG
+  // Download Single Slide PNG from offscreen 1080x1350 HD container
   const handleDownloadSingle = async (index: number) => {
-    const node = slideRefs.current[index]
+    const node = exportSlideRefs.current[index]
     if (!node) return
 
     setIsExporting(true)
@@ -275,7 +274,7 @@ export function InstagramCarouselModal({
     try {
       const dataUrl = await toPng(node, {
         quality: 0.98,
-        pixelRatio: 2,
+        pixelRatio: 1, // Already 1080x1350 px native size
         cacheBust: true,
       })
 
@@ -292,7 +291,7 @@ export function InstagramCarouselModal({
     }
   }
 
-  // Download All Slides as ZIP
+  // Download All Slides as ZIP from offscreen 1080x1350 HD container
   const handleDownloadZip = async () => {
     setIsExporting(true)
     const zip = new JSZip()
@@ -301,12 +300,12 @@ export function InstagramCarouselModal({
     try {
       for (let i = 0; i < slides.length; i++) {
         setExportProgress(`Memproses Slide ${i + 1} dari ${slides.length}...`)
-        const node = slideRefs.current[i]
+        const node = exportSlideRefs.current[i]
         if (!node) continue
 
         const dataUrl = await toPng(node, {
           quality: 0.98,
-          pixelRatio: 2,
+          pixelRatio: 1,
           cacheBust: true,
         })
 
@@ -337,397 +336,515 @@ export function InstagramCarouselModal({
   }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-zinc-950/75 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
-      <div className="relative w-full max-w-4xl bg-white rounded-3xl border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
-        {/* Header */}
-        <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/70 shrink-0">
-          <div className="flex items-center gap-2">
-            <div className="p-2 rounded-xl bg-zinc-900 text-amber-400">
-              <Sparkles className="w-4 h-4" />
-            </div>
-            <div>
-              <h3 className="font-serif font-bold text-base text-zinc-900">
-                Instagram Carousel Card Generator
-              </h3>
-              <p className="text-xs text-zinc-500">
-                Kartu visual estetik otomatis (1080×1350 px) hingga 8 slide konteks utuh
-              </p>
-            </div>
-          </div>
-
-          <button
-            onClick={onClose}
-            className="p-2 rounded-full hover:bg-zinc-200 text-zinc-500 hover:text-zinc-900 transition"
-            title="Tutup"
+    <>
+      {/* HIDDEN NATIVE 1080x1350 PX OFF-SCREEN RENDER CONTAINER FOR EXPORT */}
+      <div className="fixed top-0 left-[-9999px] z-[-9999] pointer-events-none opacity-100 flex flex-col gap-10">
+        {slides.map((s, idx) => (
+          <div
+            key={`export-${s.id}`}
+            ref={(el) => {
+              exportSlideRefs.current[idx] = el
+            }}
+            className={`w-[1080px] h-[1350px] p-16 flex flex-col justify-between select-none ${currentTheme.bg}`}
+            style={{ width: '1080px', height: '1350px' }}
           >
-            <X className="w-5 h-5" />
-          </button>
-        </div>
-
-        {/* Main Workspace Body */}
-        <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
-          {/* Controls Column (Left / Top) */}
-          <div className="lg:col-span-4 space-y-5">
-            {/* Theme Picker */}
-            <div className="space-y-2 bg-zinc-50 p-4 rounded-2xl border border-zinc-200">
-              <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider flex items-center gap-1.5">
-                <Palette className="w-3.5 h-3.5" />
-                <span>Pilih Tema Desain</span>
-              </label>
-
-              <div className="grid grid-cols-3 gap-2 pt-1">
-                <button
-                  type="button"
-                  onClick={() => setTheme('loka-warm')}
-                  className={`p-2.5 rounded-xl text-xs font-serif font-semibold border flex flex-col items-center gap-1 transition ${
-                    theme === 'loka-warm'
-                      ? 'bg-[#F4EFEA] border-zinc-900 text-zinc-900 shadow-xs ring-2 ring-zinc-900/20'
-                      : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-100'
-                  }`}
-                >
-                  <div className="w-4 h-4 rounded-full bg-[#F4EFEA] border border-zinc-400" />
-                  Loka Warm
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setTheme('dark-editorial')}
-                  className={`p-2.5 rounded-xl text-xs font-serif font-semibold border flex flex-col items-center gap-1 transition ${
-                    theme === 'dark-editorial'
-                      ? 'bg-zinc-950 border-amber-400 text-amber-400 shadow-xs ring-2 ring-amber-400/20'
-                      : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800'
-                  }`}
-                >
-                  <div className="w-4 h-4 rounded-full bg-zinc-950 border border-amber-400" />
-                  Dark Editorial
-                </button>
-
-                <button
-                  type="button"
-                  onClick={() => setTheme('minimalist')}
-                  className={`p-2.5 rounded-xl text-xs font-sans font-semibold border flex flex-col items-center gap-1 transition ${
-                    theme === 'minimalist'
-                      ? 'bg-white border-zinc-900 text-zinc-900 shadow-xs ring-2 ring-zinc-900/20'
-                      : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:bg-zinc-100'
-                  }`}
-                >
-                  <div className="w-4 h-4 rounded-full bg-white border border-zinc-300" />
-                  Minimalist
-                </button>
+            {/* Top Bar inside Card */}
+            <div className="flex items-center justify-between z-10">
+              <div className="flex items-center gap-3">
+                <span className="font-serif font-extrabold tracking-tight text-3xl">
+                  LOKA
+                </span>
+                <span className="text-base opacity-60 font-mono uppercase tracking-wider">
+                  • Jurnal Literasi
+                </span>
               </div>
+
+              <span
+                className={`text-lg font-mono font-bold px-4 py-1.5 rounded-full border ${currentTheme.badgeBg}`}
+              >
+                {idx + 1 < 10 ? `0${idx + 1}` : idx + 1} / {slides.length < 10 ? `0${slides.length}` : slides.length}
+              </span>
             </div>
 
-            {/* Slide Navigation List */}
-            <div className="space-y-2 bg-zinc-50 p-4 rounded-2xl border border-zinc-200">
-              <div className="flex items-center justify-between mb-2">
-                <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider flex items-center gap-1.5">
-                  <Layers className="w-3.5 h-3.5" />
-                  <span>Daftar Slide ({slides.length})</span>
-                </label>
-                <button
-                  type="button"
-                  onClick={handleAddSlide}
-                  className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition"
-                  title="Tambah slide baru"
-                >
-                  <Plus className="w-3 h-3" />
-                  <span>Tambah Slide</span>
-                </button>
-              </div>
-
-              <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
-                {slides.map((s, idx) => (
-                  <div
-                    key={s.id}
-                    onClick={() => setCurrentIndex(idx)}
-                    className={`p-2.5 rounded-xl border text-xs cursor-pointer transition flex items-center justify-between ${
-                      idx === currentIndex
-                        ? 'bg-zinc-900 text-white border-zinc-900 font-semibold shadow-xs'
-                        : 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-100'
-                    }`}
-                  >
-                    <div className="flex items-center gap-2 truncate">
-                      <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/20">
-                        {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
-                      </span>
-                      <span className="truncate">
-                        {s.type === 'cover'
-                          ? 'Slide 1: Cover Headliner'
-                          : s.type === 'cta'
-                          ? 'Slide Akhir: Call to Action'
-                          : s.text?.substring(0, 30) + '...'}
-                      </span>
+            {/* Card Content Body */}
+            <div className="relative my-auto py-10 z-10 space-y-8">
+              {s.type === 'cover' && (
+                <div className="space-y-8">
+                  {coverImageUrl && (
+                    <div className="w-full h-80 rounded-3xl overflow-hidden border border-black/10 shadow-md mb-8">
+                      <img
+                        src={coverImageUrl}
+                        alt=""
+                        className="w-full h-full object-cover"
+                      />
                     </div>
+                  )}
+                  <h2 className="text-5xl font-serif font-extrabold leading-[1.18] tracking-tight">
+                    {s.headline}
+                  </h2>
+                  {s.text && (
+                    <p className={`text-2xl font-serif leading-relaxed ${currentTheme.secondaryText}`}>
+                      {s.text}
+                    </p>
+                  )}
+                </div>
+              )}
 
-                    <div className="flex items-center gap-1.5 shrink-0">
-                      {s.type === 'quote' && slides.length > 2 && (
-                        <button
-                          type="button"
-                          onClick={(e) => handleDeleteSlide(s.id, e)}
-                          className="p-1 text-zinc-400 hover:text-red-500 rounded transition"
-                          title="Hapus Slide Ini"
-                        >
-                          <Trash2 className="w-3.5 h-3.5" />
-                        </button>
-                      )}
-                      {idx === currentIndex && (
-                        <span className="text-[10px] bg-amber-400 text-zinc-950 font-bold px-2 py-0.5 rounded-full">
-                          Aktif
-                        </span>
-                      )}
+              {s.type === 'quote' && (
+                <div className="relative py-6 space-y-8">
+                  <Quote
+                    className={`absolute -top-16 -left-8 w-36 h-36 pointer-events-none ${currentTheme.quoteIconColor}`}
+                  />
+                  <p className="text-4xl font-serif font-medium leading-[1.4] tracking-normal relative z-10 italic">
+                    {s.text}
+                  </p>
+                </div>
+              )}
+
+              {s.type === 'cta' && (
+                <div className="text-center space-y-10 py-8">
+                  <div className="w-24 h-24 rounded-3xl bg-zinc-900 text-white flex items-center justify-center mx-auto shadow-lg">
+                    <BookOpen className="w-12 h-12 text-amber-400" />
+                  </div>
+
+                  <div className="space-y-4">
+                    <h3 className="text-4xl font-serif font-bold leading-snug">
+                      {s.headline}
+                    </h3>
+                    <p className={`text-xl font-serif italic ${currentTheme.secondaryText}`}>
+                      {s.text}
+                    </p>
+                  </div>
+
+                  <div className="pt-4">
+                    <div
+                      className={`inline-flex items-center gap-4 px-10 py-5 rounded-full text-xl shadow-md ${currentTheme.ctaBtnBg}`}
+                    >
+                      <span>Baca Cerita Selengkapnya</span>
+                      <ArrowRight className="w-6 h-6" />
                     </div>
                   </div>
-                ))}
-              </div>
+                </div>
+              )}
             </div>
 
-            {/* Quick Edit Current Active Slide */}
-            {activeSlide && (
-              <div className="space-y-2 bg-zinc-50 p-4 rounded-2xl border border-zinc-200">
-                <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider flex items-center justify-between">
-                  <span>
-                    Edit Teks Slide {currentIndex + 1 < 10 ? `0${currentIndex + 1}` : currentIndex + 1}
-                  </span>
-                  {editingSlideId === activeSlide.id ? (
-                    <button
-                      type="button"
-                      onClick={() => saveEditSlide(activeSlide.id)}
-                      className="text-emerald-600 font-bold text-[11px] hover:underline"
-                    >
-                      Simpan Teks
-                    </button>
-                  ) : (
-                    <button
-                      type="button"
-                      onClick={() => startEditSlide(activeSlide)}
-                      className="text-zinc-500 hover:text-zinc-900 font-medium text-[11px] underline"
-                    >
-                      Ubah Teks
-                    </button>
-                  )}
-                </label>
-
-                {editingSlideId === activeSlide.id ? (
-                  <textarea
-                    rows={3}
-                    value={editingText}
-                    onChange={(e) => setEditingText(e.target.value)}
-                    className="w-full p-2.5 rounded-xl border border-zinc-300 text-xs bg-white focus:outline-none focus:border-zinc-900"
+            {/* Card Footer Bar */}
+            <div className="pt-8 border-t border-current/15 flex items-center justify-between z-10 text-xl">
+              <div className="flex items-center gap-4">
+                {authorAvatar ? (
+                  <img
+                    src={authorAvatar}
+                    alt=""
+                    className="w-14 h-14 rounded-full object-cover border border-current/20"
                   />
                 ) : (
-                  <p className="text-xs text-zinc-600 font-serif italic bg-white p-2.5 rounded-xl border border-zinc-200/80 line-clamp-3">
-                    {activeSlide.text || activeSlide.headline}
-                  </p>
+                  <div className="w-14 h-14 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-lg">
+                    {authorName.charAt(0).toUpperCase()}
+                  </div>
                 )}
+                <span className="font-semibold truncate max-w-sm">
+                  {authorName}
+                </span>
               </div>
-            )}
 
-            {/* Export Action Buttons */}
-            <div className="space-y-2 pt-2">
-              <button
-                type="button"
-                onClick={handleDownloadZip}
-                disabled={isExporting}
-                className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-zinc-900 hover:bg-black text-white text-xs font-bold shadow-md transition disabled:opacity-50"
-              >
-                {isExporting ? (
-                  <>
-                    <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
-                    <span>{exportProgress || 'Mengekspor...'}</span>
-                  </>
-                ) : (
-                  <>
-                    <Download className="w-4 h-4 text-amber-400" />
-                    <span>Unduh Semua ({slides.length}) Slide (.ZIP)</span>
-                  </>
-                )}
-              </button>
-
-              <button
-                type="button"
-                onClick={() => handleDownloadSingle(currentIndex)}
-                disabled={isExporting}
-                className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl border border-zinc-300 hover:border-zinc-400 bg-white text-zinc-800 text-xs font-semibold transition hover:bg-zinc-50 disabled:opacity-50"
-              >
-                <FileImage className="w-4 h-4 text-zinc-500" />
-                <span>Unduh Slide Ini (PNG)</span>
-              </button>
+              <span className={`text-lg font-medium font-serif italic ${currentTheme.secondaryText}`}>
+                loka.id
+              </span>
             </div>
           </div>
+        ))}
+      </div>
 
-          {/* Interactive Card Canvas Preview (Right / Center) */}
-          <div className="lg:col-span-8 flex flex-col items-center justify-center space-y-4">
-            {/* Slide Navigation Header Bar */}
-            <div className="flex items-center justify-between w-full max-w-[360px] px-2">
-              <button
-                type="button"
-                onClick={handlePrev}
-                className="p-1.5 rounded-full bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-700 transition shadow-xs"
-                title="Slide Sebelumnya"
-              >
-                <ChevronLeft className="w-4 h-4" />
-              </button>
-
-              <span className="text-xs font-semibold font-mono text-zinc-600">
-                Slide {currentIndex + 1} / {slides.length}
-              </span>
-
-              <button
-                type="button"
-                onClick={handleNext}
-                className="p-1.5 rounded-full bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-700 transition shadow-xs"
-                title="Slide Selanjutnya"
-              >
-                <ChevronRight className="w-4 h-4" />
-              </button>
-            </div>
-
-            {/* PREVIEW CONTAINER (Scaled for screen view) */}
-            <div className="relative shadow-2xl rounded-3xl overflow-hidden border border-zinc-300/80 bg-zinc-900">
-              <div className="w-[340px] sm:w-[380px] aspect-[4/5] overflow-hidden relative">
-                {/* ACTIVE SLIDE CARD DOM */}
-                {slides.map((s, idx) => {
-                  const isCurrent = idx === currentIndex
-                  return (
-                    <div
-                      key={s.id}
-                      ref={(el) => {
-                        slideRefs.current[idx] = el
-                      }}
-                      className={`absolute inset-0 w-full h-full p-8 flex flex-col justify-between select-none ${
-                        currentTheme.bg
-                      } ${isCurrent ? 'opacity-100 z-10' : 'opacity-0 -z-10 pointer-events-none'}`}
-                      style={{
-                        width: '100%',
-                        height: '100%',
-                      }}
-                    >
-                      {/* Top Bar inside Card */}
-                      <div className="flex items-center justify-between z-10">
-                        <div className="flex items-center gap-2">
-                          <span className="font-serif font-extrabold tracking-tight text-base">
-                            LOKA
-                          </span>
-                          <span className="text-[10px] opacity-60 font-mono uppercase tracking-wider">
-                            • Jurnal Literasi
-                          </span>
-                        </div>
-
-                        <span
-                          className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${currentTheme.badgeBg}`}
-                        >
-                          {idx + 1 < 10 ? `0${idx + 1}` : idx + 1} / {slides.length < 10 ? `0${slides.length}` : slides.length}
-                        </span>
-                      </div>
-
-                      {/* Card Content Body */}
-                      <div className="relative my-auto py-6 z-10 space-y-4">
-                        {s.type === 'cover' && (
-                          <div className="space-y-4">
-                            {coverImageUrl && (
-                              <div className="w-full h-36 rounded-2xl overflow-hidden border border-black/10 shadow-sm mb-4">
-                                <img
-                                  src={coverImageUrl}
-                                  alt=""
-                                  className="w-full h-full object-cover"
-                                />
-                              </div>
-                            )}
-                            <h2 className="text-2xl sm:text-3xl font-serif font-extrabold leading-[1.18] tracking-tight">
-                              {s.headline}
-                            </h2>
-                            {s.text && (
-                              <p className={`text-xs sm:text-sm font-serif line-clamp-3 leading-relaxed ${currentTheme.secondaryText}`}>
-                                {s.text}
-                              </p>
-                            )}
-                          </div>
-                        )}
-
-                        {s.type === 'quote' && (
-                          <div className="relative py-2 space-y-4">
-                            <Quote
-                              className={`absolute -top-6 -left-3 w-16 h-16 pointer-events-none ${currentTheme.quoteIconColor}`}
-                            />
-                            <p className="text-xl sm:text-2xl font-serif font-medium leading-[1.38] tracking-normal relative z-10 italic">
-                              {s.text}
-                            </p>
-                          </div>
-                        )}
-
-                        {s.type === 'cta' && (
-                          <div className="text-center space-y-5 py-4">
-                            <div className="w-12 h-12 rounded-2xl bg-zinc-900 text-white flex items-center justify-center mx-auto shadow-md">
-                              <BookOpen className="w-6 h-6 text-amber-400" />
-                            </div>
-
-                            <div className="space-y-2">
-                              <h3 className="text-xl sm:text-2xl font-serif font-bold leading-snug">
-                                {s.headline}
-                              </h3>
-                              <p className={`text-xs font-serif italic ${currentTheme.secondaryText}`}>
-                                {s.text}
-                              </p>
-                            </div>
-
-                            <div className="pt-2">
-                              <div
-                                className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs shadow-sm ${currentTheme.ctaBtnBg}`}
-                              >
-                                <span>Baca Cerita Selengkapnya</span>
-                                <ArrowRight className="w-3.5 h-3.5" />
-                              </div>
-                            </div>
-                          </div>
-                        )}
-                      </div>
-
-                      {/* Card Footer Bar */}
-                      <div className="pt-4 border-t border-current/15 flex items-center justify-between z-10 text-[11px]">
-                        <div className="flex items-center gap-2">
-                          {authorAvatar ? (
-                            <img
-                              src={authorAvatar}
-                              alt=""
-                              className="w-6 h-6 rounded-full object-cover border border-current/20"
-                            />
-                          ) : (
-                            <div className="w-6 h-6 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-[9px]">
-                              {authorName.charAt(0).toUpperCase()}
-                            </div>
-                          )}
-                          <span className="font-semibold truncate max-w-[140px]">
-                            {authorName}
-                          </span>
-                        </div>
-
-                        <span className={`text-[10px] font-medium font-serif italic ${currentTheme.secondaryText}`}>
-                          loka.id
-                        </span>
-                      </div>
-                    </div>
-                  )
-                })}
+      {/* VISIBLE INTERACTIVE MODAL FOR SCREEN PREVIEW & CONTROLS */}
+      <div className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-6 bg-zinc-950/75 backdrop-blur-md overflow-y-auto animate-in fade-in duration-200">
+        <div className="relative w-full max-w-4xl bg-white rounded-3xl border border-zinc-200 shadow-2xl overflow-hidden flex flex-col max-h-[92vh]">
+          {/* Header */}
+          <div className="px-6 py-4 border-b border-zinc-200 flex items-center justify-between bg-zinc-50/70 shrink-0">
+            <div className="flex items-center gap-2">
+              <div className="p-2 rounded-xl bg-zinc-900 text-amber-400">
+                <Sparkles className="w-4 h-4" />
+              </div>
+              <div>
+                <h3 className="font-serif font-bold text-base text-zinc-900">
+                  Instagram Carousel Card Generator
+                </h3>
+                <p className="text-xs text-zinc-500">
+                  Kartu visual estetik otomatis (1080×1350 px) hingga 8 slide konteks utuh
+                </p>
               </div>
             </div>
 
-            {/* Pagination Dots */}
-            <div className="flex items-center gap-1.5 pt-1">
-              {slides.map((_, idx) => (
+            <button
+              onClick={onClose}
+              className="p-2 rounded-full hover:bg-zinc-200 text-zinc-500 hover:text-zinc-900 transition"
+              title="Tutup"
+            >
+              <X className="w-5 h-5" />
+            </button>
+          </div>
+
+          {/* Main Workspace Body */}
+          <div className="flex-1 overflow-y-auto p-4 sm:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6 items-start">
+            {/* Controls Column (Left / Top) */}
+            <div className="lg:col-span-4 space-y-5">
+              {/* Theme Picker */}
+              <div className="space-y-2 bg-zinc-50 p-4 rounded-2xl border border-zinc-200">
+                <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider flex items-center gap-1.5">
+                  <Palette className="w-3.5 h-3.5" />
+                  <span>Pilih Tema Desain</span>
+                </label>
+
+                <div className="grid grid-cols-3 gap-2 pt-1">
+                  <button
+                    type="button"
+                    onClick={() => setTheme('loka-warm')}
+                    className={`p-2.5 rounded-xl text-xs font-serif font-semibold border flex flex-col items-center gap-1 transition ${
+                      theme === 'loka-warm'
+                        ? 'bg-[#F4EFEA] border-zinc-900 text-zinc-900 shadow-xs ring-2 ring-zinc-900/20'
+                        : 'bg-white border-zinc-200 text-zinc-600 hover:bg-zinc-100'
+                    }`}
+                  >
+                    <div className="w-4 h-4 rounded-full bg-[#F4EFEA] border border-zinc-400" />
+                    Loka Warm
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTheme('dark-editorial')}
+                    className={`p-2.5 rounded-xl text-xs font-serif font-semibold border flex flex-col items-center gap-1 transition ${
+                      theme === 'dark-editorial'
+                        ? 'bg-zinc-950 border-amber-400 text-amber-400 shadow-xs ring-2 ring-amber-400/20'
+                        : 'bg-zinc-900 border-zinc-700 text-zinc-300 hover:bg-zinc-800'
+                    }`}
+                  >
+                    <div className="w-4 h-4 rounded-full bg-zinc-950 border border-amber-400" />
+                    Dark Editorial
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setTheme('minimalist')}
+                    className={`p-2.5 rounded-xl text-xs font-sans font-semibold border flex flex-col items-center gap-1 transition ${
+                      theme === 'minimalist'
+                        ? 'bg-white border-zinc-900 text-zinc-900 shadow-xs ring-2 ring-zinc-900/20'
+                        : 'bg-zinc-50 border-zinc-200 text-zinc-600 hover:bg-zinc-100'
+                    }`}
+                  >
+                    <div className="w-4 h-4 rounded-full bg-white border border-zinc-300" />
+                    Minimalist
+                  </button>
+                </div>
+              </div>
+
+              {/* Slide Navigation List */}
+              <div className="space-y-2 bg-zinc-50 p-4 rounded-2xl border border-zinc-200">
+                <div className="flex items-center justify-between mb-2">
+                  <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider flex items-center gap-1.5">
+                    <Layers className="w-3.5 h-3.5" />
+                    <span>Daftar Slide ({slides.length})</span>
+                  </label>
+                  <button
+                    type="button"
+                    onClick={handleAddSlide}
+                    className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition"
+                    title="Tambah slide baru"
+                  >
+                    <Plus className="w-3 h-3" />
+                    <span>Tambah Slide</span>
+                  </button>
+                </div>
+
+                <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
+                  {slides.map((s, idx) => (
+                    <div
+                      key={s.id}
+                      onClick={() => setCurrentIndex(idx)}
+                      className={`p-2.5 rounded-xl border text-xs cursor-pointer transition flex items-center justify-between ${
+                        idx === currentIndex
+                          ? 'bg-zinc-900 text-white border-zinc-900 font-semibold shadow-xs'
+                          : 'bg-white border-zinc-200 text-zinc-700 hover:bg-zinc-100'
+                      }`}
+                    >
+                      <div className="flex items-center gap-2 truncate">
+                        <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/20">
+                          {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
+                        </span>
+                        <span className="truncate">
+                          {s.type === 'cover'
+                            ? 'Slide 1: Cover Headliner'
+                            : s.type === 'cta'
+                            ? 'Slide Akhir: Call to Action'
+                            : s.text?.substring(0, 30) + '...'}
+                        </span>
+                      </div>
+
+                      <div className="flex items-center gap-1.5 shrink-0">
+                        {s.type === 'quote' && slides.length > 2 && (
+                          <button
+                            type="button"
+                            onClick={(e) => handleDeleteSlide(s.id, e)}
+                            className="p-1 text-zinc-400 hover:text-red-500 rounded transition"
+                            title="Hapus Slide Ini"
+                          >
+                            <Trash2 className="w-3.5 h-3.5" />
+                          </button>
+                        )}
+                        {idx === currentIndex && (
+                          <span className="text-[10px] bg-amber-400 text-zinc-950 font-bold px-2 py-0.5 rounded-full">
+                            Aktif
+                          </span>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+
+              {/* Quick Edit Current Active Slide */}
+              {activeSlide && (
+                <div className="space-y-2 bg-zinc-50 p-4 rounded-2xl border border-zinc-200">
+                  <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider flex items-center justify-between">
+                    <span>
+                      Edit Teks Slide {currentIndex + 1 < 10 ? `0${currentIndex + 1}` : currentIndex + 1}
+                    </span>
+                    {editingSlideId === activeSlide.id ? (
+                      <button
+                        type="button"
+                        onClick={() => saveEditSlide(activeSlide.id)}
+                        className="text-emerald-600 font-bold text-[11px] hover:underline"
+                      >
+                        Simpan Teks
+                      </button>
+                    ) : (
+                      <button
+                        type="button"
+                        onClick={() => startEditSlide(activeSlide)}
+                        className="text-zinc-500 hover:text-zinc-900 font-medium text-[11px] underline"
+                      >
+                        Ubah Teks
+                      </button>
+                    )}
+                  </label>
+
+                  {editingSlideId === activeSlide.id ? (
+                    <textarea
+                      rows={3}
+                      value={editingText}
+                      onChange={(e) => setEditingText(e.target.value)}
+                      className="w-full p-2.5 rounded-xl border border-zinc-300 text-xs bg-white focus:outline-none focus:border-zinc-900"
+                    />
+                  ) : (
+                    <p className="text-xs text-zinc-600 font-serif italic bg-white p-2.5 rounded-xl border border-zinc-200/80 line-clamp-3">
+                      {activeSlide.text || activeSlide.headline}
+                    </p>
+                  )}
+                </div>
+              )}
+
+              {/* Export Action Buttons */}
+              <div className="space-y-2 pt-2">
                 <button
-                  key={idx}
-                  onClick={() => setCurrentIndex(idx)}
-                  className={`h-2 rounded-full transition-all ${
-                    idx === currentIndex
-                      ? 'w-6 bg-zinc-900'
-                      : 'w-2 bg-zinc-300 hover:bg-zinc-400'
-                  }`}
-                />
-              ))}
+                  type="button"
+                  onClick={handleDownloadZip}
+                  disabled={isExporting}
+                  className="w-full flex items-center justify-center gap-2 py-3 px-4 rounded-2xl bg-zinc-900 hover:bg-black text-white text-xs font-bold shadow-md transition disabled:opacity-50"
+                >
+                  {isExporting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin text-amber-400" />
+                      <span>{exportProgress || 'Mengekspor...'}</span>
+                    </>
+                  ) : (
+                    <>
+                      <Download className="w-4 h-4 text-amber-400" />
+                      <span>Unduh Semua ({slides.length}) Slide (.ZIP)</span>
+                    </>
+                  )}
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => handleDownloadSingle(currentIndex)}
+                  disabled={isExporting}
+                  className="w-full flex items-center justify-center gap-2 py-2.5 px-4 rounded-2xl border border-zinc-300 hover:border-zinc-400 bg-white text-zinc-800 text-xs font-semibold transition hover:bg-zinc-50 disabled:opacity-50"
+                >
+                  <FileImage className="w-4 h-4 text-zinc-500" />
+                  <span>Unduh Slide Ini (PNG)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* Interactive Card Canvas Preview (Right / Center) */}
+            <div className="lg:col-span-8 flex flex-col items-center justify-center space-y-4">
+              {/* Slide Navigation Header Bar */}
+              <div className="flex items-center justify-between w-full max-w-[360px] px-2">
+                <button
+                  type="button"
+                  onClick={handlePrev}
+                  className="p-1.5 rounded-full bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-700 transition shadow-xs"
+                  title="Slide Sebelumnya"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+
+                <span className="text-xs font-semibold font-mono text-zinc-600">
+                  Slide {currentIndex + 1} / {slides.length}
+                </span>
+
+                <button
+                  type="button"
+                  onClick={handleNext}
+                  className="p-1.5 rounded-full bg-white border border-zinc-200 hover:bg-zinc-100 text-zinc-700 transition shadow-xs"
+                  title="Slide Selanjutnya"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+
+              {/* PREVIEW CONTAINER (Scaled for screen view) */}
+              <div className="relative shadow-2xl rounded-3xl overflow-hidden border border-zinc-300/80 bg-zinc-900">
+                <div className="w-[340px] sm:w-[380px] aspect-[4/5] overflow-hidden relative">
+                  {/* ACTIVE SLIDE CARD PREVIEW DOM */}
+                  {slides.map((s, idx) => {
+                    const isCurrent = idx === currentIndex
+                    return (
+                      <div
+                        key={`preview-${s.id}`}
+                        className={`absolute inset-0 w-full h-full p-8 flex flex-col justify-between select-none ${
+                          currentTheme.bg
+                        } ${isCurrent ? 'opacity-100 z-10' : 'opacity-0 -z-10 pointer-events-none'}`}
+                        style={{
+                          width: '100%',
+                          height: '100%',
+                        }}
+                      >
+                        {/* Top Bar inside Card */}
+                        <div className="flex items-center justify-between z-10">
+                          <div className="flex items-center gap-2">
+                            <span className="font-serif font-extrabold tracking-tight text-base">
+                              LOKA
+                            </span>
+                            <span className="text-[10px] opacity-60 font-mono uppercase tracking-wider">
+                              • Jurnal Literasi
+                            </span>
+                          </div>
+
+                          <span
+                            className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${currentTheme.badgeBg}`}
+                          >
+                            {idx + 1 < 10 ? `0${idx + 1}` : idx + 1} / {slides.length < 10 ? `0${slides.length}` : slides.length}
+                          </span>
+                        </div>
+
+                        {/* Card Content Body */}
+                        <div className="relative my-auto py-6 z-10 space-y-4">
+                          {s.type === 'cover' && (
+                            <div className="space-y-4">
+                              {coverImageUrl && (
+                                <div className="w-full h-36 rounded-2xl overflow-hidden border border-black/10 shadow-sm mb-4">
+                                  <img
+                                    src={coverImageUrl}
+                                    alt=""
+                                    className="w-full h-full object-cover"
+                                  />
+                                </div>
+                              )}
+                              <h2 className="text-2xl sm:text-3xl font-serif font-extrabold leading-[1.18] tracking-tight">
+                                {s.headline}
+                              </h2>
+                              {s.text && (
+                                <p className={`text-xs sm:text-sm font-serif line-clamp-3 leading-relaxed ${currentTheme.secondaryText}`}>
+                                  {s.text}
+                                </p>
+                              )}
+                            </div>
+                          )}
+
+                          {s.type === 'quote' && (
+                            <div className="relative py-2 space-y-4">
+                              <Quote
+                                className={`absolute -top-6 -left-3 w-16 h-16 pointer-events-none ${currentTheme.quoteIconColor}`}
+                              />
+                              <p className="text-xl sm:text-2xl font-serif font-medium leading-[1.38] tracking-normal relative z-10 italic">
+                                {s.text}
+                              </p>
+                            </div>
+                          )}
+
+                          {s.type === 'cta' && (
+                            <div className="text-center space-y-5 py-4">
+                              <div className="w-12 h-12 rounded-2xl bg-zinc-900 text-white flex items-center justify-center mx-auto shadow-md">
+                                <BookOpen className="w-6 h-6 text-amber-400" />
+                              </div>
+
+                              <div className="space-y-2">
+                                <h3 className="text-xl sm:text-2xl font-serif font-bold leading-snug">
+                                  {s.headline}
+                                </h3>
+                                <p className={`text-xs font-serif italic ${currentTheme.secondaryText}`}>
+                                  {s.text}
+                                </p>
+                              </div>
+
+                              <div className="pt-2">
+                                <div
+                                  className={`inline-flex items-center gap-2 px-5 py-2.5 rounded-full text-xs shadow-sm ${currentTheme.ctaBtnBg}`}
+                                >
+                                  <span>Baca Cerita Selengkapnya</span>
+                                  <ArrowRight className="w-3.5 h-3.5" />
+                                </div>
+                              </div>
+                            </div>
+                          )}
+                        </div>
+
+                        {/* Card Footer Bar */}
+                        <div className="pt-4 border-t border-current/15 flex items-center justify-between z-10 text-[11px]">
+                          <div className="flex items-center gap-2">
+                            {authorAvatar ? (
+                              <img
+                                src={authorAvatar}
+                                alt=""
+                                className="w-6 h-6 rounded-full object-cover border border-current/20"
+                              />
+                            ) : (
+                              <div className="w-6 h-6 rounded-full bg-zinc-900 text-white flex items-center justify-center font-bold text-[9px]">
+                                {authorName.charAt(0).toUpperCase()}
+                              </div>
+                            )}
+                            <span className="font-semibold truncate max-w-[140px]">
+                              {authorName}
+                            </span>
+                          </div>
+
+                          <span className={`text-[10px] font-medium font-serif italic ${currentTheme.secondaryText}`}>
+                            loka.id
+                          </span>
+                        </div>
+                      </div>
+                    )
+                  })}
+                </div>
+              </div>
+
+              {/* Pagination Dots */}
+              <div className="flex items-center gap-1.5 pt-1">
+                {slides.map((_, idx) => (
+                  <button
+                    key={idx}
+                    onClick={() => setCurrentIndex(idx)}
+                    className={`h-2 rounded-full transition-all ${
+                      idx === currentIndex
+                        ? 'w-6 bg-zinc-900'
+                        : 'w-2 bg-zinc-300 hover:bg-zinc-400'
+                    }`}
+                  />
+                ))}
+              </div>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </>
   )
 }
