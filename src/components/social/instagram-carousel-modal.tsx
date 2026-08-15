@@ -14,6 +14,8 @@ import {
   FileImage,
   BookOpen,
   ArrowRight,
+  Plus,
+  Trash2,
 } from 'lucide-react'
 import { toPng } from 'html-to-image'
 import JSZip from 'jszip'
@@ -53,14 +55,24 @@ function buildInitialSlides(
       if (node.type === 'blockquote') {
         const text = node.content?.map((c: any) => c.text).filter(Boolean).join(' ')
         if (text && text.length > 10) extractedQuotes.push(text)
-      } else if (node.type === 'heading' && (node.attrs?.level === 2 || node.attrs?.level === 3)) {
+      } else if (node.type === 'heading') {
         const text = node.content?.map((c: any) => c.text).filter(Boolean).join(' ')
         if (text && text.length > 10) extractedQuotes.push(text)
       } else if (node.type === 'paragraph') {
-        const hasBold = node.content?.some((c: any) => c.marks?.some((m: any) => m.type === 'bold'))
         const text = node.content?.map((c: any) => c.text).filter(Boolean).join(' ')
-        if (hasBold && text && text.length > 20 && text.length < 200) {
-          extractedQuotes.push(text)
+        if (text && text.length > 20) {
+          // If paragraph is long, split into sentences
+          if (text.length > 160) {
+            const sentences = text.match(/[^.!?]+[.!?]+/g) || [text]
+            sentences.forEach((s: string) => {
+              const trimmed = s.trim()
+              if (trimmed.length > 25 && trimmed.length < 180) {
+                extractedQuotes.push(trimmed)
+              }
+            })
+          } else {
+            extractedQuotes.push(text)
+          }
         }
       }
     })
@@ -68,17 +80,17 @@ function buildInitialSlides(
     try {
       const tempDiv = document.createElement('div')
       tempDiv.innerHTML = content
-      const blockquotes = tempDiv.querySelectorAll('blockquote, h2, h3')
-      blockquotes.forEach((el) => {
+      const elements = tempDiv.querySelectorAll('blockquote, h1, h2, h3, p')
+      elements.forEach((el) => {
         const text = el.textContent?.trim()
-        if (text && text.length > 10) extractedQuotes.push(text)
+        if (text && text.length > 20) extractedQuotes.push(text)
       })
     } catch {
       // fallback ignore DOM parse error
     }
   }
 
-  // Fallback if no blockquotes/headings found: use excerpt or default quote
+  // Fallback if no quotes found: use excerpt or default quote
   if (extractedQuotes.length === 0) {
     if (excerpt && excerpt.trim()) {
       extractedQuotes.push(excerpt.trim())
@@ -89,7 +101,8 @@ function buildInitialSlides(
     }
   }
 
-  const uniqueQuotes = Array.from(new Set(extractedQuotes)).slice(0, 3)
+  // Deduplicate and extract up to 6 content slides (total 8 slides with Cover + 6 Content + CTA)
+  const uniqueQuotes = Array.from(new Set(extractedQuotes)).slice(0, 6)
 
   return [
     // Slide 1: Cover Card
@@ -99,13 +112,13 @@ function buildInitialSlides(
       headline: title || 'Artikel LOKA',
       text: excerpt || undefined,
     },
-    // Slide 2..N: Quote Highlight Cards
+    // Slide 2..7: Quote Highlight Cards (Up to 6 slides)
     ...uniqueQuotes.map((q, idx) => ({
       id: `slide-quote-${idx}`,
       type: 'quote' as const,
       text: q.startsWith('"') ? q : `"${q}"`,
     })),
-    // Slide Final: CTA Card
+    // Slide 8: CTA Card
     {
       id: 'slide-cta',
       type: 'cta',
@@ -157,6 +170,38 @@ export function InstagramCarouselModal({
 
   const handleNext = () => {
     setCurrentIndex((prev) => (prev < slides.length - 1 ? prev + 1 : 0))
+  }
+
+  // Add new custom quote slide before CTA slide
+  const handleAddSlide = () => {
+    const newId = `slide-quote-${Date.now()}`
+    const newSlide: SlideItem = {
+      id: newId,
+      type: 'quote',
+      text: '"Tulis poin penting atau kutipan tambahan di sini..."',
+    }
+
+    setSlides((prev) => {
+      const ctaIndex = prev.findIndex((s) => s.type === 'cta')
+      if (ctaIndex !== -1) {
+        const next = [...prev]
+        next.splice(ctaIndex, 0, newSlide)
+        return next
+      }
+      return [...prev, newSlide]
+    })
+    setCurrentIndex(slides.length - 1)
+  }
+
+  // Delete slide
+  const handleDeleteSlide = (id: string, e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (slides.length <= 2) {
+      alert('Minimal harus ada 2 slide (Cover dan Call to Action).')
+      return
+    }
+    setSlides((prev) => prev.filter((s) => s.id !== id))
+    setCurrentIndex((prev) => (prev > 0 ? prev - 1 : 0))
   }
 
   // Handle slide text inline edit
@@ -305,7 +350,7 @@ export function InstagramCarouselModal({
                 Instagram Carousel Card Generator
               </h3>
               <p className="text-xs text-zinc-500">
-                Kartu visual estetik otomatis (1080×1350 px) siap unduh & posting di Instagram
+                Kartu visual estetik otomatis (1080×1350 px) hingga 8 slide konteks utuh
               </p>
             </div>
           </div>
@@ -379,7 +424,15 @@ export function InstagramCarouselModal({
                   <Layers className="w-3.5 h-3.5" />
                   <span>Daftar Slide ({slides.length})</span>
                 </label>
-                <span className="text-[11px] text-zinc-500 font-medium">Klik untuk sunting</span>
+                <button
+                  type="button"
+                  onClick={handleAddSlide}
+                  className="inline-flex items-center gap-1 text-[11px] font-bold text-indigo-600 hover:text-indigo-800 transition"
+                  title="Tambah slide baru"
+                >
+                  <Plus className="w-3 h-3" />
+                  <span>Tambah Slide</span>
+                </button>
               </div>
 
               <div className="space-y-1.5 max-h-56 overflow-y-auto pr-1">
@@ -395,22 +448,34 @@ export function InstagramCarouselModal({
                   >
                     <div className="flex items-center gap-2 truncate">
                       <span className="font-mono text-[10px] px-1.5 py-0.5 rounded bg-white/20">
-                        0{idx + 1}
+                        {idx + 1 < 10 ? `0${idx + 1}` : idx + 1}
                       </span>
                       <span className="truncate">
                         {s.type === 'cover'
                           ? 'Slide 1: Cover Headliner'
                           : s.type === 'cta'
                           ? 'Slide Akhir: Call to Action'
-                          : s.text?.substring(0, 35) + '...'}
+                          : s.text?.substring(0, 30) + '...'}
                       </span>
                     </div>
 
-                    {idx === currentIndex && (
-                      <span className="text-[10px] bg-amber-400 text-zinc-950 font-bold px-2 py-0.5 rounded-full shrink-0">
-                        Aktif
-                      </span>
-                    )}
+                    <div className="flex items-center gap-1.5 shrink-0">
+                      {s.type === 'quote' && slides.length > 2 && (
+                        <button
+                          type="button"
+                          onClick={(e) => handleDeleteSlide(s.id, e)}
+                          className="p-1 text-zinc-400 hover:text-red-500 rounded transition"
+                          title="Hapus Slide Ini"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      )}
+                      {idx === currentIndex && (
+                        <span className="text-[10px] bg-amber-400 text-zinc-950 font-bold px-2 py-0.5 rounded-full">
+                          Aktif
+                        </span>
+                      )}
+                    </div>
                   </div>
                 ))}
               </div>
@@ -420,7 +485,9 @@ export function InstagramCarouselModal({
             {activeSlide && (
               <div className="space-y-2 bg-zinc-50 p-4 rounded-2xl border border-zinc-200">
                 <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider flex items-center justify-between">
-                  <span>Edit Teks Slide 0{currentIndex + 1}</span>
+                  <span>
+                    Edit Teks Slide {currentIndex + 1 < 10 ? `0${currentIndex + 1}` : currentIndex + 1}
+                  </span>
                   {editingSlideId === activeSlide.id ? (
                     <button
                       type="button"
@@ -471,7 +538,7 @@ export function InstagramCarouselModal({
                 ) : (
                   <>
                     <Download className="w-4 h-4 text-amber-400" />
-                    <span>Unduh Semua Slide (.ZIP)</span>
+                    <span>Unduh Semua ({slides.length}) Slide (.ZIP)</span>
                   </>
                 )}
               </button>
@@ -549,7 +616,7 @@ export function InstagramCarouselModal({
                         <span
                           className={`text-[10px] font-mono font-bold px-2 py-0.5 rounded-full border ${currentTheme.badgeBg}`}
                         >
-                          0{idx + 1} / 0{slides.length}
+                          {idx + 1 < 10 ? `0${idx + 1}` : idx + 1} / {slides.length < 10 ? `0${slides.length}` : slides.length}
                         </span>
                       </div>
 
