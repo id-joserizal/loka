@@ -49,8 +49,14 @@ export async function getNotifications(limit = 20) {
     .eq('user_id', user.id)
     .eq('read', false)
 
+  const normalizedNotifications = (data || []).map((item: any) => ({
+    ...item,
+    actor: Array.isArray(item.actor) ? item.actor[0] : item.actor,
+    articles: Array.isArray(item.articles) ? item.articles[0] : item.articles,
+  }))
+
   return {
-    notifications: data || [],
+    notifications: normalizedNotifications,
     unreadCount: count || 0,
   }
 }

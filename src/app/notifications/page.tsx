@@ -26,7 +26,7 @@ export default async function NotificationsPage() {
     .from('profiles')
     .select('username, full_name, avatar_url, role')
     .eq('id', user.id)
-    .single()
+    .maybeSingle()
 
   const { notifications, unreadCount } = await getNotifications(50)
 

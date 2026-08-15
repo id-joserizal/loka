@@ -121,7 +121,8 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
     notFound()
   }
 
-  const author = article.profiles as any
+  const authorRaw = article.profiles as any
+  const author = Array.isArray(authorRaw) ? authorRaw[0] : authorRaw || {}
   const authorName = author?.full_name || author?.username || 'Penulis'
   const authorUsername = author?.username || 'user'
   const authorAvatar = author?.avatar_url
@@ -161,13 +162,13 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
 
   // Fetch follow status
   let isFollowing = false
-  if (user && user.id !== author.id) {
+  if (user && author?.id && user.id !== author.id) {
     const { data: follow } = await supabase
       .from('follows')
       .select('follower_id')
       .eq('follower_id', user.id)
       .eq('following_id', author.id)
-      .single()
+      .maybeSingle()
     isFollowing = !!follow
   }
 
@@ -283,10 +284,15 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
       <main className="flex-1 max-w-[720px] w-full mx-auto px-4 py-10 sm:py-16">
         {/* Banner Menanggapi jika artikel ini adalah tanggapan */}
         {(() => {
-          const commentObj = (article as any).response_to_comment
+          const commentRaw = (article as any).response_to_comment
+          const commentObj = Array.isArray(commentRaw) ? commentRaw[0] : commentRaw
+
           if (commentObj) {
-            const commentAuthor = commentObj.profiles || {}
-            const commentArticleSlug = commentObj.articles?.slug || null
+            const commentAuthorRaw = commentObj.profiles
+            const commentAuthor = Array.isArray(commentAuthorRaw) ? commentAuthorRaw[0] : commentAuthorRaw || {}
+            const commentArticleRaw = commentObj.articles
+            const commentArticleObj = Array.isArray(commentArticleRaw) ? commentArticleRaw[0] : commentArticleRaw || {}
+            const commentArticleSlug = commentArticleObj?.slug || null
             return (
               <ResponseParentBanner
                 responseTo={null}
@@ -302,8 +308,21 @@ export default async function ArticleDetailPage(props: ArticlePageProps) {
               />
             )
           }
-          if (article.response_to) {
-            return <ResponseParentBanner responseTo={article.response_to as any} />
+
+          const parentArticleRaw = article.response_to
+          const parentArticleObj = Array.isArray(parentArticleRaw) ? parentArticleRaw[0] : parentArticleRaw
+
+          if (parentArticleObj) {
+            const parentProfileRaw = parentArticleObj.profiles
+            const parentProfileObj = Array.isArray(parentProfileRaw) ? parentProfileRaw[0] : parentProfileRaw || {}
+            return (
+              <ResponseParentBanner
+                responseTo={{
+                  ...parentArticleObj,
+                  profiles: parentProfileObj,
+                }}
+              />
+            )
           }
           return null
         })()}
