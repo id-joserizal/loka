@@ -1,13 +1,12 @@
 'use client'
 
-import { useState, useRef, useTransition, useEffect } from 'react'
+import { useState, useRef, useEffect } from 'react'
 import {
   X,
   Download,
   ChevronLeft,
   ChevronRight,
   Sparkles,
-  Check,
   Loader2,
   Palette,
   Quote,
@@ -40,6 +39,82 @@ interface SlideItem {
 
 type ThemeType = 'loka-warm' | 'dark-editorial' | 'minimalist'
 
+function buildInitialSlides(
+  title: string,
+  excerpt?: string | null,
+  content?: any,
+  authorName: string = 'Penulis LOKA'
+): SlideItem[] {
+  const extractedQuotes: string[] = []
+
+  // Parse Tiptap JSON AST
+  if (content && typeof content === 'object' && Array.isArray(content.content)) {
+    content.content.forEach((node: any) => {
+      if (node.type === 'blockquote') {
+        const text = node.content?.map((c: any) => c.text).filter(Boolean).join(' ')
+        if (text && text.length > 10) extractedQuotes.push(text)
+      } else if (node.type === 'heading' && (node.attrs?.level === 2 || node.attrs?.level === 3)) {
+        const text = node.content?.map((c: any) => c.text).filter(Boolean).join(' ')
+        if (text && text.length > 10) extractedQuotes.push(text)
+      } else if (node.type === 'paragraph') {
+        const hasBold = node.content?.some((c: any) => c.marks?.some((m: any) => m.type === 'bold'))
+        const text = node.content?.map((c: any) => c.text).filter(Boolean).join(' ')
+        if (hasBold && text && text.length > 20 && text.length < 200) {
+          extractedQuotes.push(text)
+        }
+      }
+    })
+  } else if (typeof content === 'string' && typeof window !== 'undefined') {
+    try {
+      const tempDiv = document.createElement('div')
+      tempDiv.innerHTML = content
+      const blockquotes = tempDiv.querySelectorAll('blockquote, h2, h3')
+      blockquotes.forEach((el) => {
+        const text = el.textContent?.trim()
+        if (text && text.length > 10) extractedQuotes.push(text)
+      })
+    } catch {
+      // fallback ignore DOM parse error
+    }
+  }
+
+  // Fallback if no blockquotes/headings found: use excerpt or default quote
+  if (extractedQuotes.length === 0) {
+    if (excerpt && excerpt.trim()) {
+      extractedQuotes.push(excerpt.trim())
+    } else {
+      extractedQuotes.push(
+        `"Tulisan menarik tentang ${title || 'Artikel LOKA'} yang menguraikan sudut pandang penting dan mendalam."`
+      )
+    }
+  }
+
+  const uniqueQuotes = Array.from(new Set(extractedQuotes)).slice(0, 3)
+
+  return [
+    // Slide 1: Cover Card
+    {
+      id: 'slide-cover',
+      type: 'cover',
+      headline: title || 'Artikel LOKA',
+      text: excerpt || undefined,
+    },
+    // Slide 2..N: Quote Highlight Cards
+    ...uniqueQuotes.map((q, idx) => ({
+      id: `slide-quote-${idx}`,
+      type: 'quote' as const,
+      text: q.startsWith('"') ? q : `"${q}"`,
+    })),
+    // Slide Final: CTA Card
+    {
+      id: 'slide-cta',
+      type: 'cta',
+      headline: `Baca Artikel Selengkapnya di LOKA`,
+      text: `Simak Ulasan Utuh "${title || 'Artikel'}" oleh ${authorName}`,
+    },
+  ]
+}
+
 export function InstagramCarouselModal({
   isOpen,
   onClose,
@@ -50,7 +125,9 @@ export function InstagramCarouselModal({
   excerpt,
   content,
 }: InstagramCarouselModalProps) {
-  const [slides, setSlides] = useState<SlideItem[]>([])
+  const [slides, setSlides] = useState<SlideItem[]>(() =>
+    buildInitialSlides(title, excerpt, content, authorName)
+  )
   const [currentIndex, setCurrentIndex] = useState(0)
   const [theme, setTheme] = useState<ThemeType>('loka-warm')
   const [isExporting, setIsExporting] = useState(false)
@@ -60,85 +137,18 @@ export function InstagramCarouselModal({
 
   const slideRefs = useRef<(HTMLDivElement | null)[]>([])
 
-  // Extract key quotes & structure content for Carousel Slides
+  // Re-build slides whenever modal opens or props change
   useEffect(() => {
     if (!isOpen) return
-
-    const extractedQuotes: string[] = []
-
-    // Parse Tiptap JSON AST
-    if (content && typeof content === 'object' && Array.isArray(content.content)) {
-      content.content.forEach((node: any) => {
-        if (node.type === 'blockquote') {
-          const text = node.content?.map((c: any) => c.text).filter(Boolean).join(' ')
-          if (text && text.length > 10) extractedQuotes.push(text)
-        } else if (node.type === 'heading' && (node.attrs?.level === 2 || node.attrs?.level === 3)) {
-          const text = node.content?.map((c: any) => c.text).filter(Boolean).join(' ')
-          if (text && text.length > 10) extractedQuotes.push(text)
-        } else if (node.type === 'paragraph') {
-          // Check if paragraph contains bold marks or significant text
-          const hasBold = node.content?.some((c: any) => c.marks?.some((m: any) => m.type === 'bold'))
-          const text = node.content?.map((c: any) => c.text).filter(Boolean).join(' ')
-          if (hasBold && text && text.length > 20 && text.length < 200) {
-            extractedQuotes.push(text)
-          }
-        }
-      })
-    } else if (typeof content === 'string') {
-      // Raw HTML fallback
-      const tempDiv = document.createElement('div')
-      tempDiv.innerHTML = content
-      const blockquotes = tempDiv.querySelectorAll('blockquote, h2, h3')
-      blockquotes.forEach((el) => {
-        const text = el.textContent?.trim()
-        if (text && text.length > 10) extractedQuotes.push(text)
-      })
-    }
-
-    // Fallback if no blockquotes/headings found: split excerpt or default quotes
-    if (extractedQuotes.length === 0) {
-      if (excerpt && excerpt.trim()) {
-        extractedQuotes.push(excerpt.trim())
-      } else {
-        extractedQuotes.push(
-          `"Tulisan menarik tentang ${title} yang menguraikan sudut pandang penting dan mendalam."`
-        )
-      }
-    }
-
-    // Deduplicate & limit highlight slides to max 3
-    const uniqueQuotes = Array.from(new Set(extractedQuotes)).slice(0, 3)
-
-    const initialSlides: SlideItem[] = [
-      // Slide 1: Cover Card
-      {
-        id: 'slide-cover',
-        type: 'cover',
-        headline: title,
-        text: excerpt || undefined,
-      },
-      // Slide 2..N: Quote Highlight Cards
-      ...uniqueQuotes.map((q, idx) => ({
-        id: `slide-quote-${idx}`,
-        type: 'quote' as const,
-        text: q.startsWith('"') ? q : `"${q}"`,
-      })),
-      // Slide Final: CTA Card
-      {
-        id: 'slide-cta',
-        type: 'cta',
-        headline: `Baca Artikel Selengkapnya di LOKA`,
-        text: `Simak Ulasan Utuh "${title}" oleh ${authorName}`,
-      },
-    ]
-
-    setSlides(initialSlides)
+    const newSlides = buildInitialSlides(title, excerpt, content, authorName)
+    setSlides(newSlides)
     setCurrentIndex(0)
   }, [isOpen, title, excerpt, content, authorName])
 
-  if (!isOpen) return null
+  if (!isOpen || !slides || slides.length === 0) return null
 
   const activeSlide = slides[currentIndex] || slides[0]
+  if (!activeSlide) return null
 
   // Slide navigation
   const handlePrev = () => {
@@ -158,7 +168,13 @@ export function InstagramCarouselModal({
   const saveEditSlide = (id: string) => {
     setSlides((prev) =>
       prev.map((s) =>
-        s.id === id ? { ...s, text: s.type === 'quote' ? editingText : s.text, headline: s.type !== 'quote' ? editingText : s.headline } : s
+        s.id === id
+          ? {
+              ...s,
+              text: s.type === 'quote' ? editingText : s.text,
+              headline: s.type !== 'quote' ? editingText : s.headline,
+            }
+          : s
       )
     )
     setEditingSlideId(null)
@@ -214,7 +230,7 @@ export function InstagramCarouselModal({
     try {
       const dataUrl = await toPng(node, {
         quality: 0.98,
-        pixelRatio: 2, // 2x resolution for high sharpness
+        pixelRatio: 2,
         cacheBust: true,
       })
 
@@ -249,7 +265,6 @@ export function InstagramCarouselModal({
           cacheBust: true,
         })
 
-        // Base64 to binary
         const base64Data = dataUrl.replace(/^data:image\/png;base64,/, '')
         folder?.file(`slide-${i + 1}.png`, base64Data, { base64: true })
       }
@@ -258,7 +273,7 @@ export function InstagramCarouselModal({
       const contentBlob = await zip.generateAsync({ type: 'blob' })
 
       const link = document.createElement('a')
-      const cleanSlug = title
+      const cleanSlug = (title || 'artikel')
         .toLowerCase()
         .replace(/[^\w\s-]/g, '')
         .replace(/[\s_-]+/g, '-')
@@ -402,41 +417,43 @@ export function InstagramCarouselModal({
             </div>
 
             {/* Quick Edit Current Active Slide */}
-            <div className="space-y-2 bg-zinc-50 p-4 rounded-2xl border border-zinc-200">
-              <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider flex items-center justify-between">
-                <span>Edit Teks Slide 0{currentIndex + 1}</span>
-                {editingSlideId === activeSlide.id ? (
-                  <button
-                    type="button"
-                    onClick={() => saveEditSlide(activeSlide.id)}
-                    className="text-emerald-600 font-bold text-[11px] hover:underline"
-                  >
-                    Simpan Teks
-                  </button>
-                ) : (
-                  <button
-                    type="button"
-                    onClick={() => startEditSlide(activeSlide)}
-                    className="text-zinc-500 hover:text-zinc-900 font-medium text-[11px] underline"
-                  >
-                    Ubah Teks
-                  </button>
-                )}
-              </label>
+            {activeSlide && (
+              <div className="space-y-2 bg-zinc-50 p-4 rounded-2xl border border-zinc-200">
+                <label className="text-xs font-semibold text-zinc-700 uppercase tracking-wider flex items-center justify-between">
+                  <span>Edit Teks Slide 0{currentIndex + 1}</span>
+                  {editingSlideId === activeSlide.id ? (
+                    <button
+                      type="button"
+                      onClick={() => saveEditSlide(activeSlide.id)}
+                      className="text-emerald-600 font-bold text-[11px] hover:underline"
+                    >
+                      Simpan Teks
+                    </button>
+                  ) : (
+                    <button
+                      type="button"
+                      onClick={() => startEditSlide(activeSlide)}
+                      className="text-zinc-500 hover:text-zinc-900 font-medium text-[11px] underline"
+                    >
+                      Ubah Teks
+                    </button>
+                  )}
+                </label>
 
-              {editingSlideId === activeSlide.id ? (
-                <textarea
-                  rows={3}
-                  value={editingText}
-                  onChange={(e) => setEditingText(e.target.value)}
-                  className="w-full p-2.5 rounded-xl border border-zinc-300 text-xs bg-white focus:outline-none focus:border-zinc-900"
-                />
-              ) : (
-                <p className="text-xs text-zinc-600 font-serif italic bg-white p-2.5 rounded-xl border border-zinc-200/80 line-clamp-3">
-                  {activeSlide.text || activeSlide.headline}
-                </p>
-              )}
-            </div>
+                {editingSlideId === activeSlide.id ? (
+                  <textarea
+                    rows={3}
+                    value={editingText}
+                    onChange={(e) => setEditingText(e.target.value)}
+                    className="w-full p-2.5 rounded-xl border border-zinc-300 text-xs bg-white focus:outline-none focus:border-zinc-900"
+                  />
+                ) : (
+                  <p className="text-xs text-zinc-600 font-serif italic bg-white p-2.5 rounded-xl border border-zinc-200/80 line-clamp-3">
+                    {activeSlide.text || activeSlide.headline}
+                  </p>
+                )}
+              </div>
+            )}
 
             {/* Export Action Buttons */}
             <div className="space-y-2 pt-2">
@@ -514,7 +531,6 @@ export function InstagramCarouselModal({
                         currentTheme.bg
                       } ${isCurrent ? 'opacity-100 z-10' : 'opacity-0 -z-10 pointer-events-none'}`}
                       style={{
-                        // Ensure exact 4:5 aspect ratio layout
                         width: '100%',
                         height: '100%',
                       }}
