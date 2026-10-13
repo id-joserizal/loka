@@ -6,7 +6,6 @@ import { TrendingBar } from '@/components/article/trending-bar'
 import { ArrowRight, PenTool, Sparkles, Compass, TrendingUp, Users } from 'lucide-react'
 
 export const dynamic = 'force-dynamic'
-export const revalidate = 0
 
 const ITEMS_PER_PAGE = 5
 
@@ -19,47 +18,43 @@ async function fetchArticlesWithStats(supabase: any, rawArticles: any[]) {
 
   const articleIds = rawArticles.map((a) => a.id)
 
-  // Fetch votes (upvote = +1, downvote = -1)
-  const { data: votesData } = await supabase
-    .from('votes')
-    .select('article_id, vote_type')
-    .in('article_id', articleIds)
-
-  const votesMap: Record<string, number> = {}
-  votesData?.forEach((v: any) => {
-    votesMap[v.article_id] = (votesMap[v.article_id] || 0) + v.vote_type
-  })
-
-  // Fetch comments count
-  const { data: commentsData } = await supabase
-    .from('comments')
-    .select('article_id')
-    .in('article_id', articleIds)
-
-  const commentsMap: Record<string, number> = {}
-  commentsData?.forEach((c: any) => {
-    commentsMap[c.article_id] = (commentsMap[c.article_id] || 0) + 1
-  })
-
-  // Fetch views count
-  let viewsMap: Record<string, number> = {}
-  try {
-    const { data: viewsData } = await supabase
+  // Run all 3 stat queries in PARALLEL — no more sequential awaits
+  const [votesResult, commentsResult, viewsResult] = await Promise.all([
+    supabase
+      .from('votes')
+      .select('article_id, vote_type')
+      .in('article_id', articleIds),
+    supabase
+      .from('comments')
+      .select('article_id')
+      .in('article_id', articleIds),
+    supabase
       .from('page_views')
       .select('article_id')
       .in('article_id', articleIds)
+      .then((r: any) => r)
+      .catch(() => ({ data: [] })),
+  ])
 
-    viewsData?.forEach((v: any) => {
-      viewsMap[v.article_id] = (viewsMap[v.article_id] || 0) + 1
-    })
-  } catch {}
+  const votesMap: Record<string, number> = {}
+  votesResult.data?.forEach((v: any) => {
+    votesMap[v.article_id] = (votesMap[v.article_id] || 0) + v.vote_type
+  })
+
+  const commentsMap: Record<string, number> = {}
+  commentsResult.data?.forEach((c: any) => {
+    commentsMap[c.article_id] = (commentsMap[c.article_id] || 0) + 1
+  })
+
+  const viewsMap: Record<string, number> = {}
+  viewsResult.data?.forEach((v: any) => {
+    viewsMap[v.article_id] = (viewsMap[v.article_id] || 0) + 1
+  })
 
   return rawArticles.map((a) => {
-    const netVotes = votesMap[a.id] || 0       // Upvote - Downvote
+    const netVotes = votesMap[a.id] || 0
     const commentCount = commentsMap[a.id] || 0
     const viewCount = viewsMap[a.id] || 0
-
-    // Trending Score = (Upvote - Downvote) + Views + Komentar
     const trendingScore = netVotes + viewCount + commentCount
 
     return {

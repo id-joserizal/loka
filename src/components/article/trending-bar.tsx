@@ -1,4 +1,5 @@
 import Link from 'next/link'
+import Image from 'next/image'
 import { TrendingUp, ArrowBigUp, Flame } from 'lucide-react'
 import { BadgeIcon } from '@/components/ui/badge-icon'
 
@@ -78,9 +79,11 @@ export function TrendingBar({ articles }: TrendingBarProps) {
                 <div className="flex items-center gap-2">
                   <Link href={`/profile/${authorUsername}`} className="flex items-center gap-1.5 group/author shrink-0">
                     {authorAvatar ? (
-                      <img
+                      <Image
                         src={authorAvatar}
                         alt=""
+                        width={20}
+                        height={20}
                         className="w-5 h-5 rounded-full object-cover border border-zinc-200"
                       />
                     ) : (
