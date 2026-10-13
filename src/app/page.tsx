@@ -8,8 +8,10 @@ import { ArrowRight, PenTool, Sparkles, Compass, TrendingUp, Users } from 'lucid
 export const dynamic = 'force-dynamic'
 export const revalidate = 0
 
+const ITEMS_PER_PAGE = 5
+
 interface HomePageProps {
-  searchParams: Promise<{ tab?: string }>
+  searchParams: Promise<{ tab?: string; page?: string }>
 }
 
 async function fetchArticlesWithStats(supabase: any, rawArticles: any[]) {
@@ -72,7 +74,9 @@ async function fetchArticlesWithStats(supabase: any, rawArticles: any[]) {
 
 export default async function HomePage(props: HomePageProps) {
   const resolvedSearchParams = props.searchParams ? await props.searchParams : {}
-  const { tab = 'latest' } = resolvedSearchParams
+  const { tab = 'latest', page: pageParam = '1' } = resolvedSearchParams
+  const page = Math.max(1, parseInt(pageParam) || 1)
+  const offset = (page - 1) * ITEMS_PER_PAGE
   const supabase = await createClient()
 
   const {
@@ -89,8 +93,8 @@ export default async function HomePage(props: HomePageProps) {
     profile = data
   }
 
-  // 1. Fetch raw published articles for computing Trending Bar top stories
-  const { data: rawAllPublished } = await supabase
+  // 1. Fetch minimal data for TrendingBar (top 10 only, lightweight)
+  const { data: rawTrendingRaw } = await supabase
     .from('articles')
     .select(`
       id,
@@ -116,17 +120,40 @@ export default async function HomePage(props: HomePageProps) {
       )
     `)
     .eq('status', 'published')
-    .limit(50)
+    .limit(10)
 
-  const allPublishedWithStats = await fetchArticlesWithStats(supabase, rawAllPublished || [])
-
-  // Sort by trending score for TrendingBar top section
-  const trendingBarArticles = [...allPublishedWithStats].sort(
+  const trendingWithStats = await fetchArticlesWithStats(supabase, rawTrendingRaw || [])
+  const trendingBarArticles = [...trendingWithStats].sort(
     (a, b) => b.trending_score - a.trending_score
   )
 
-  // 2. Fetch feed articles based on selected tab
+  // 2. Fetch feed articles based on selected tab (paginated)
   let articles: any[] = []
+  let totalCount = 0
+
+  const articleSelectQuery = `
+    id,
+    title,
+    slug,
+    excerpt,
+    cover_image_url,
+    reading_time,
+    published_at,
+    created_at,
+    status,
+    profiles:author_id (
+      username,
+      full_name,
+      avatar_url,
+      badge
+    ),
+    article_tags (
+      tags (
+        name,
+        slug
+      )
+    )
+  `
 
   if (tab === 'following' && user) {
     const { data: followedIds } = await supabase
@@ -136,76 +163,53 @@ export default async function HomePage(props: HomePageProps) {
 
     if (followedIds && followedIds.length > 0) {
       const ids = followedIds.map((f) => f.following_id)
+
+      // Get total count
+      const { count } = await supabase
+        .from('articles')
+        .select('id', { count: 'exact', head: true })
+        .eq('status', 'published')
+        .in('author_id', ids)
+      totalCount = count || 0
+
       const { data } = await supabase
         .from('articles')
-        .select(`
-          id,
-          title,
-          slug,
-          excerpt,
-          cover_image_url,
-          reading_time,
-          published_at,
-          created_at,
-          status,
-          profiles:author_id (
-            username,
-            full_name,
-            avatar_url,
-            badge
-          ),
-          article_tags (
-            tags (
-              name,
-              slug
-            )
-          )
-        `)
+        .select(articleSelectQuery)
         .eq('status', 'published')
         .in('author_id', ids)
         .order('published_at', { ascending: false, nullsFirst: false })
         .order('created_at', { ascending: false })
-        .limit(20)
+        .range(offset, offset + ITEMS_PER_PAGE - 1)
 
       articles = await fetchArticlesWithStats(supabase, data || [])
     }
   } else if (tab === 'trending') {
-    // Return feed articles sorted strictly by dynamic trending algorithm score
-    articles = [...allPublishedWithStats].sort((a, b) => b.trending_score - a.trending_score)
+    // For trending, fetch with stats then paginate in-memory (scores need all data)
+    const { data: rawTrending, count } = await supabase
+      .from('articles')
+      .select(articleSelectQuery, { count: 'exact' })
+      .eq('status', 'published')
+      .range(offset, offset + ITEMS_PER_PAGE - 1)
+    totalCount = count || 0
+    const withStats = await fetchArticlesWithStats(supabase, rawTrending || [])
+    articles = withStats.sort((a, b) => b.trending_score - a.trending_score)
   } else {
     // Latest (default)
-    const { data } = await supabase
+    const { data, count } = await supabase
       .from('articles')
-      .select(`
-        id,
-        title,
-        slug,
-        excerpt,
-        cover_image_url,
-        reading_time,
-        published_at,
-        created_at,
-        status,
-        profiles:author_id (
-          username,
-          full_name,
-          avatar_url,
-          badge
-        ),
-        article_tags (
-          tags (
-            name,
-            slug
-          )
-        )
-      `)
+      .select(articleSelectQuery, { count: 'exact' })
       .eq('status', 'published')
       .order('published_at', { ascending: false, nullsFirst: false })
       .order('created_at', { ascending: false })
-      .limit(20)
+      .range(offset, offset + ITEMS_PER_PAGE - 1)
 
+    totalCount = count || 0
     articles = await fetchArticlesWithStats(supabase, data || [])
   }
+
+  const totalPages = Math.ceil(totalCount / ITEMS_PER_PAGE)
+  const hasPrev = page > 1
+  const hasNext = page < totalPages
 
   // Fetch popular tags
   const { data: popularTags } = await supabase
@@ -313,11 +317,48 @@ export default async function HomePage(props: HomePageProps) {
 
             {/* Articles List */}
             {articles && articles.length > 0 ? (
-              <div className="divide-y divide-zinc-100">
-                {articles.map((art: any) => (
-                  <ArticleCard key={art.id} article={art} />
-                ))}
-              </div>
+              <>
+                <div className="divide-y divide-zinc-100">
+                  {articles.map((art: any) => (
+                    <ArticleCard key={art.id} article={art} />
+                  ))}
+                </div>
+
+                {/* Pagination */}
+                {totalPages > 1 && (
+                  <div className="flex items-center justify-between pt-8 pb-2">
+                    <div className="text-xs text-zinc-400">
+                      Halaman {page} dari {totalPages}
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {hasPrev ? (
+                        <Link
+                          href={`/?tab=${tab}&page=${page - 1}`}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-zinc-200 bg-white hover:bg-zinc-50 text-xs font-semibold text-zinc-700 transition shadow-sm"
+                        >
+                          ← Sebelumnya
+                        </Link>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-zinc-100 bg-zinc-50 text-xs font-semibold text-zinc-300 cursor-not-allowed">
+                          ← Sebelumnya
+                        </span>
+                      )}
+                      {hasNext ? (
+                        <Link
+                          href={`/?tab=${tab}&page=${page + 1}`}
+                          className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-zinc-900 bg-zinc-900 hover:bg-black text-xs font-semibold text-white transition shadow-sm"
+                        >
+                          Selanjutnya →
+                        </Link>
+                      ) : (
+                        <span className="inline-flex items-center gap-1.5 px-4 py-2 rounded-full border border-zinc-100 bg-zinc-50 text-xs font-semibold text-zinc-300 cursor-not-allowed">
+                          Selanjutnya →
+                        </span>
+                      )}
+                    </div>
+                  </div>
+                )}
+              </>
             ) : (
               <div className="text-center py-20 space-y-4">
                 <div className="w-12 h-12 rounded-full bg-zinc-100 flex items-center justify-center mx-auto text-zinc-400">
